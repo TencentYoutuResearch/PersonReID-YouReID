@@ -1,0 +1,1 @@
+python train_mgnv2.py --gpu 2,3 --code resnet_torch_sample --epochs 80 --batch-size 64 --load_img_to_cash 0 --least_image_per_class 4 --use_tf_sample 0  --net MGNv2 --height 384 --width 128 --optim SGD --weight-decay 1e-3 --lr 0.025 --workers 16 --data Market1501 --margin 0.5

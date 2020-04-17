@@ -1,0 +1,1 @@
+python train_baseline.py --gpu 0,1,2,3 --code baseline_101_ibn__256x128_gcb_kesci_4gpus --epochs 80 --batch-size 128 --load_img_to_cash 0 --least_image_per_class 2 --use_tf_sample 0  --net Baseline --height 256 --width 128 --optim SGD --weight-decay 1e-3 --lr 0.05 --workers 16 --data KESCI --margin 0.5 --use_random_pad 0
