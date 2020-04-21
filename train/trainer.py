@@ -24,12 +24,8 @@ import evaluate
 import loss
 
 from core.config import config
+from loss.loss import normalize
 
-# best_prec1 = 0
-# args = init_parser().parse_args()
-# if args.evaluate is False:
-#     sys.stdout = Logger(os.path.join('../../snapshot', args.code))
-# print(args)
 os.environ['CUDA_VISIBLE_DEVICES'] = ','.join([str(x) for x in config.get('gpus')])
 
 model_config = config.get('model_config')
@@ -39,7 +35,7 @@ def bulid_dataset():
     """"""
     cfg = config.get('dataset_config')
     data = dataset.__dict__[cfg['name']](part='train', size=(cfg['height'], cfg['width']))
-    train_sampler = RandomIdentitySampler(data, cfg['batch_size'], 2)
+    train_sampler = RandomIdentitySampler(data, cfg['batch_size'], cfg['least_image_per_class'])
     train_loader = torch.utils.data.DataLoader(
         data,
         batch_size=cfg['batch_size'], shuffle=False, sampler=train_sampler,
@@ -77,8 +73,6 @@ def main():
 
     # Data loading code
     train_loader, test_loader = bulid_dataset()
-
-
 
     # create models
 
@@ -199,9 +193,11 @@ def train(train_loader, model, criterion, tri_criterion, optimizer, lr_scheduler
 
 
 def extract(test_data, model):
-
     model.eval()
     for p, val_loader in test_data.items():
+        # if os.path.exists(os.path.join(config.get('task_id'),
+        #                                config.get('dataset_config')['name'] + '_' + p + '.mat')):
+        #     return
         with torch.no_grad():
             paths = []
             for i, (input, target, path) in enumerate(val_loader):
@@ -209,14 +205,14 @@ def extract(test_data, model):
                 target = target.cuda(non_blocking=True)
                 # compute output
                 outputs = model(input)
-                feat = outputs[1][0].renorm(2, 0, 1e-5).mul(1e5)
+                feat = normalize(outputs[1][0])
 
                 input_ = input.flip(3)
                 outputs = model(input_)
-                feat_ = outputs[1][0].renorm(2, 0, 1e-5).mul(1e5)
+                feat_ = normalize(outputs[1][0])
 
                 feat = (feat + feat_) / 2
-                feat = feat.renorm(2, 0, 1e-5).mul(1e5)
+                feat = normalize(feat)
 
                 feature = feat.cpu()
                 target = target.cpu()

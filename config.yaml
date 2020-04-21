@@ -2,5 +2,5 @@ gpus: [0,1]
 #yaml: 'experiment/occluded/bmask.yaml'
 yaml: '../example/baseline.yaml'
 
-task_id: '../../snapshot/baseline_reduce'
+task_id: '../../snapshot/baseline_reduce_4'
 eval: false
