@@ -28,6 +28,12 @@ class Config(object):
             'save_max_to_keep': 2,
             'print_freq': 10,
             'seed': 1234,
+            'use_fp16': False,
+            'fp16_config': {
+                'level': 'O1', #混合精度训练
+                'keep_batchnorm_fp32': None,
+                'loss_scale': None
+            }
         }
 
     def get(self, attr):

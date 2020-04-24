@@ -1,6 +1,6 @@
-gpus: [0,1]
+gpus: [2,3]
 #yaml: 'experiment/occluded/bmask.yaml'
-yaml: '../example/baseline.yaml'
-
-task_id: '../../snapshot/baseline_reduce_4'
+yaml: '../example/mgn.yaml' #mgn
+task_id: '../../snapshot/mgn_b64_2gpus' #mgn_fp16
 eval: false
+use_fp16: false

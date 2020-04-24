@@ -51,9 +51,9 @@ class Logger(object):
         self.close()
 
     def write(self, msg):
-        self.console.write(msg)
+        self.console.write(msg + '\n')
         if self.file is not None:
-            self.file.write(msg)
+            self.file.write(msg + '\n')
         self.flush()
 
     def flush(self):

@@ -1,16 +1,15 @@
-
 dataset_config:
   workers: 16
   name: Market1501
   part: train
   height: 384
   width: 128
-  batch_size: 128 # 128 是fp32 2卡配置
+  batch_size: 64
   load_img_to_cash: 1
   least_image_per_class: 4
-  use_tf_sample: 0
-  use_random_pad: 0
-  mgn_style_aug: false
+  use_tf_sample: 1
+  mgn_style_aug: true
+
 
 optm_config:
   name: SGD
@@ -20,11 +19,11 @@ optm_config:
   momentum: 0.9
   epochs: 80
   start_epoch: 0
-  lr: 0.05  #128 0.05
+  lr: 0.025
   resume: ''
 
 model_config:
-  name: Baseline
+  name: MGN
   margin: 0.5
   alpha: 1
 

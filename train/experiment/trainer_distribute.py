@@ -1,4 +1,8 @@
+import numpy
+import argparse
+import os
 import random
+import shutil
 import time
 import warnings
 
@@ -11,6 +15,8 @@ import torch.optim
 import torch.utils.data
 import torch.utils.data.distributed
 
+import sys
+
 import models
 import dataset
 from utils import *
@@ -20,13 +26,14 @@ import loss
 from core.config import config
 from loss.loss import normalize
 
-if config.get('use_fp16'):
-    from apex import amp
+if config.get('fp16')['status']:
+    from apex import amp, optimizers
+    from apex.parallel import DistributedDataParallel as DDP
 
-import os
+
 os.environ['CUDA_VISIBLE_DEVICES'] = ','.join([str(x) for x in config.get('gpus')])
 
-logger = Logger(config.get('task_id'))
+
 
 def bulid_dataset():
     """"""
@@ -78,13 +85,14 @@ def main():
                       'which can slow down your training considerably! '
                       'You may see unexpected behavior when restarting '
                       'from checkpoints.')
-
+    torch.distributed.init_process_group(backend='nccl',
+                                         init_method='env://')
     # Data loading code
     train_loader, test_loader = bulid_dataset()
     # create models
     model_config = config.get('model_config')
     net = models.__dict__[model_config['name']]
-    if not config.get('use_fp16') and len(config.get('gpus')) != 1:
+    if not config.get('fp16')['status'] and len(config.get('gpus')) != 1:
         model = net(num_classes=train_loader.dataset.class_num)
         model = torch.nn.DataParallel(model).cuda()
     else:
@@ -108,6 +116,7 @@ def main():
     criterion = nn.CrossEntropyLoss().cuda()
     # criterion = loss.CrossEntropyLabelSmooth(num_classes=data.class_num).cuda()
     tri_criterion = loss.TripletLoss(margin=mcfg['margin']).cuda()
+    # tri_criterion = loss.SoftTripletLoss()
 
     ocfg = config.get('optm_config')
     if ocfg['name'] == 'SGD':
@@ -118,20 +127,22 @@ def main():
         optimizer = torch.optim.Adam(parameters, ocfg['lr'],weight_decay=ocfg['weight_decay'])
 
     # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.step, gamma=0.1, last_epoch=-1)
+    # lr_scheduler = WarmupMultiStepLR(optimizer, [10, 40, 60], warmup_iters=10, warmup_factor=1.0, gamma=0.1, last_epoch=-1)
     lr_scheduler = CosineAnnealingWarmUp(optimizer,
                                           T_0=5,
                                           T_end=ocfg.get('epochs'),
                                           warmup_factor=ocfg.get('warmup_factor'),
                                           last_epoch=-1)
 
-    if config.get('use_fp16'):
-        fp16_cfg = config.get('fp16_config')
+    # lr_scheduler = WarmupMultiStepLR(optimizer, [5,30,50], gamma=0.1, last_epoch=-1)
+    if config.get('fp16')['status']:
+        fp16_cfg = config.get('fp16')
         model, optimizer = amp.initialize(model, optimizer,
                                           opt_level=fp16_cfg['level'],
                                           keep_batchnorm_fp32=fp16_cfg['keep_batchnorm_fp32'],
                                           loss_scale=fp16_cfg['loss_scale']
                                           )
-        model = nn.DataParallel(model).cuda()
+        model = DDP(model, delay_allreduce=True)
 
 
     # optionally resume from a checkpoint
@@ -144,11 +155,11 @@ def main():
             start_epoch = checkpoint['epoch']
             model.load_state_dict(checkpoint['state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer'])
-            logger.write("=> loaded checkpoint '{}' (epoch {})"
+            print("=> loaded checkpoint '{}' (epoch {})"
                   .format(ckpt, checkpoint['epoch']))
             del checkpoint
         else:
-            logger.write("=> no checkpoint found at '{}'".format(ckpt))
+            print("=> no checkpoint found at '{}'".format(ckpt))
 
     cudnn.benchmark = True
 
@@ -174,7 +185,7 @@ def main():
     cost_h = cost // 3600
     cost_m = (cost - cost_h * 3600) // 60
     cost_s = cost - cost_h * 3600 - cost_m * 60
-    logger.write('cost time: %d H %d M %d s' % (cost_h, cost_m, cost_s))
+    print('cost time: %d H %d M %d s' % (cost_h, cost_m, cost_s))
         #
     extract(test_loader, model)
     evaluate.eval_result(config.get('dataset_config')['name'], root=config.get('task_id'))
@@ -200,7 +211,7 @@ def train(train_loader, model, criterion, tri_criterion, optimizer, lr_scheduler
         loss = ce_loss + tri_loss #args.weight*
         # compute gradient and do SGD step
         optimizer.zero_grad()
-        if config.get('use_fp16'):
+        if config.get('fp16')['status']:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
                 scaled_loss.backward()
         else:
@@ -217,7 +228,7 @@ def train(train_loader, model, criterion, tri_criterion, optimizer, lr_scheduler
                 show_loss += 'CE_%d: %f ' % (ce_id, ce.item())
             for tri_id, tri in enumerate(tri_losses):
                 show_loss += 'Tri_%d: %f ' % (tri_id, tri.item())
-            logger.write('Epoch: [{0}][{1}/{2}] '
+            print('Epoch: [{0}][{1}/{2}] '
                   'Time {batch_time:.3f} '
                   'Data {data_time:.3f} '
                   'lr {lr: .6f} '
@@ -225,6 +236,8 @@ def train(train_loader, model, criterion, tri_criterion, optimizer, lr_scheduler
                 epoch, i, len(train_loader), batch_time=batch_time,
                 data_time=data_time, loss=show_loss,
                 lr=lr_scheduler.optimizer.param_groups[0]['lr']))
+
+
 
 def extract(test_data, model):
     model.eval()

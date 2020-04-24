@@ -16,7 +16,7 @@ import sys
 sys.path.append("..")
 from utils.iotools import read_image, is_image_file
 
-import numpy
+import numpy as np
 from copy import deepcopy
 import pickle
 
@@ -84,8 +84,8 @@ def make_query(root, config):
 
     return images
 
-class Market1501(data.Dataset):
-    def __init__(self, root='/data1/home/fufuyu/dataset/market1501', part='train',
+class Occluded_Duke(data.Dataset):
+    def __init__(self, root='/data1/home/fufuyu/dataset/Occluded_Duke', part='train',
                  loader=read_image, require_path=False, size=(384,128),
                  least_image_per_class=4, mgn_style_aug=False,
                  load_img_to_cash=False, default_transforms=None, **kwargs):
@@ -97,41 +97,31 @@ class Market1501(data.Dataset):
         self.least_image_per_class = least_image_per_class
         self.load_img_to_cash = load_img_to_cash
 
-        with open(os.path.join(root, 'partitions.pkl'), 'rb') as f:
-            partitions = pickle.load(f)
-
         if part == 'train':
-            im_names = partitions['trainval_im_names']
-            ids2labels = partitions['trainval_ids2labels']
-
-            trainval_ids2labels = {}
-            current_label = 0
-            for id in ids2labels:
-                trainval_ids2labels[id] = current_label
-                current_label += 1
-
+            with open(os.path.join(root, 'train.list')) as rf:
+                im_names = rf.read().splitlines()
+            ids = set([])
+            for line_i, im_name in enumerate(im_names):
+                d = int(im_name.split('_')[0])
+                if d not in ids:
+                    ids.add(d)
+            ids2labels = {d: idx for (idx, d) in enumerate(sorted(list(ids)))}
             imgs = []
             for line_i, im_name in enumerate(im_names):
-                id = self.parse_im_name(im_name, 'id')
-                label = trainval_ids2labels[id]
-                imgs.append((os.path.join(root, 'images', im_name), label, 0))
+                d = int(im_name.split('_')[0])
+                new_label = ids2labels[d]
+                imgs.append((os.path.join(root, 'bounding_box_train', im_name), new_label, 0))
 
             classes, imgs = self._postprocess(imgs, self.least_image_per_class)
         else:
-            img_list = partitions['test_im_names']
-            test_marks = partitions['test_marks']
-            q_list = []
-            g_list = []
-            classes = []
-            for im_name, test_mark in zip(img_list, test_marks):
-                if test_mark == 0:
-                    q_list.append((os.path.join(root, 'images', im_name), 0, 0))
-                else:
-                    g_list.append((os.path.join(root, 'images', im_name), 0, 0))
             if part == 'query':
-                imgs = q_list
+                with open(os.path.join(root, 'query.list')) as rf:
+                    q_list = rf.read().splitlines()
+                    imgs = [os.path.join(root, 'bounding_box_test', q) for q in q_list]
             else:
-                imgs = g_list
+                with open(os.path.join(root, 'gallery.list')) as rf:
+                    g_list = rf.read().splitlines()
+                    imgs = [os.path.join(root, 'bounding_box_test', g) for g in g_list]
 
 
         if len(imgs) == 0:
@@ -156,16 +146,21 @@ class Market1501(data.Dataset):
                                              std=[0.229, 0.224, 0.225]),
                     ])
                 else:
-                    self.transform = transforms.Compose([
-                                                         transforms.RandomHorizontalFlip(),
-                                                         transforms.Resize(size),
-                                                         transforms.Pad(10),
-                                                         transforms.RandomCrop(size),
-                                                         transforms.ToTensor(),
-                                                         transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                                              std=[0.229, 0.224, 0.225]),
-                                                         my_transforms.RandomErasing(),
-                                                         ])
+                    re1 = my_transforms.RandomErasing(probability=0.5, sl=0.01, sh=0.04)
+                    re2 = my_transforms.RandomErasing(probability=0.5, sl=0.16, sh=0.4)
+                    tlist = [
+                                      transforms.RandomHorizontalFlip(),
+                                      transforms.Resize(size),
+                                      transforms.Pad(10),
+                                      transforms.RandomCrop(size),
+                                      transforms.ToTensor(),
+                                      transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                           std=[0.229, 0.224, 0.225]),
+                                                         ]
+                    t1 = tlist + [re1]
+                    t2 = tlist + [re2]
+                    self.transform1 = transforms.Compose(t1)
+                    self.transform2 = transforms.Compose(t2)
         else:
             self.transform = default_transforms
 
@@ -237,10 +232,14 @@ class Market1501(data.Dataset):
         path, target, _ = self.imgs[index]
         if not self.load_img_to_cash:
             img = self.loader(path)
-            img = self.transform(img)
+            img1 = self.transform1(img)
+            img2 = self.transform2(img)
         else:
             src = self.cash_imgs[index]
-            img = self.transform(src)
+            img1 = self.transform1(src)
+            img2 = self.transform2(src)
+
+        img = np.stack([img1, img2], axis=0)
 
         if self.require_path:
             _, path = os.path.split(path)
@@ -254,7 +253,7 @@ class Market1501(data.Dataset):
 
 
 def test():
-    market = Market1501(part='train')
+    market = Occluded_Duke(part='train')
 
     train_loader = torch.utils.data.DataLoader(
         market,
@@ -262,7 +261,7 @@ def test():
         num_workers=4, pin_memory=True)
     for i, (input, target) in enumerate(train_loader):
         # print(flags.sum())
-        print(input, target)
+        print(input.shape, target.shape)
         print('*********')
 
 

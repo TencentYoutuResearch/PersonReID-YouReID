@@ -11,7 +11,8 @@ import json
 import numpy
 import time
 
-def eval_result(data, root, use_metric_cuhk03=False, use_rerank=False):
+def eval_result(data, root, use_metric_cuhk03=False,
+                use_rerank=False, use_pcb_format=True):
 
     gallery = os.path.join(root, data +'_gallery.mat')
     query = os.path.join(root, data +'_query.mat')
@@ -28,16 +29,24 @@ def eval_result(data, root, use_metric_cuhk03=False, use_rerank=False):
     query_label = []
     query_cam = []
     for q in query['path']:
-        pid, cam, _ = q.split('_')
-        query_label.append(int(pid))
-        query_cam.append(int(cam))
+        if use_pcb_format:
+            pid, cam, _ = q.split('_')
+            query_label.append(int(pid))
+            query_cam.append(int(cam))
+        else:
+            query_label.append(int(q.split('.')[0].split('_')[0]))
+            query_cam.append(0)
  
     gallery_label = []
     gallery_cam = []
     for g in gallery['path']:
-        pid, cam, _ = g.split('_')
-        gallery_label.append(int(pid))
-        gallery_cam.append(int(cam))
+        if use_pcb_format:
+            pid, cam, _ = g.split('_')
+            gallery_label.append(int(pid))
+            gallery_cam.append(int(cam))
+        else:
+            gallery_label.append(int(g.split('.')[0].split('_')[0]))
+            gallery_cam.append(1)
 
     cmc_scores, mAP  = utils.measure.evaluate_rank(dist, np.array(query_label), np.array(gallery_label),
                                 np.array(query_cam), np.array(gallery_cam), max_rank=50, use_metric_cuhk03=use_metric_cuhk03)
@@ -45,7 +54,10 @@ def eval_result(data, root, use_metric_cuhk03=False, use_rerank=False):
 
 
     if mAP>=0 and mAP<=100:
-        cmc_topk = (1, 5, 10, 15, 20)
+        if use_pcb_format:
+            cmc_topk = (1, 5, 10, 15, 20)
+        else:
+            cmc_topk = (1, 3, 5)
         for k in cmc_topk:
             print('  top-{:<4}{:12.2%}'
                   .format(k,cmc_scores[k - 1]))

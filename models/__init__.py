@@ -1,7 +1,7 @@
 from .resnet import *
 from .pcb import *
 from .resnet_enhanced import resnet50e, resnet152e
-from .mgn import MGN,MGN_Resnext
+from .mgn import MGN
 from .mgn_v1 import MGNv1
 from .mgn_v3 import MGNv3
 from .mgn_v4 import MGNv4
