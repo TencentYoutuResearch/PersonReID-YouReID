@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 from torchvision.models.resnet import resnet50, Bottleneck, resnet101
 
-from .backbones.senet import SENet, SEResNetBottleneck, SEBottleneck, SEResNeXtBottleneck, se_resnet101
+from models.backbones.senet import SENet, SEResNetBottleneck, SEBottleneck, SEResNeXtBottleneck, se_resnet101
 
 
 

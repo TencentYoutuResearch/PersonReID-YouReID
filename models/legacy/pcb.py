@@ -1,4 +1,4 @@
-from .resnet import *
+from models.legacy.resnet import *
 import torch.nn as nn
 import torch.nn.functional as F
 class PCB(nn.Module):

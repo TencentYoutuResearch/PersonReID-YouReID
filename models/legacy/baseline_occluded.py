@@ -9,7 +9,7 @@ import torch
 from torch import nn
 from torch.utils import model_zoo
 from .context_block import ContextBlock, ContextBlockBN
-from .backbones.se_resnet_ibn_a import IBN
+from models.backbones.se_resnet_ibn_a import IBN
 
 
 model_urls = {

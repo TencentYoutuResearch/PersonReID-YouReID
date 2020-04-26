@@ -3,21 +3,20 @@ import copy
 import torch
 from torch import nn
 
-from .backbones.se_resnet_ibn_a import se_resnet101_ibn_a
-from .backbones.resnet_ibn_a import resnet101_ibn_a
-from .backbones.senet import se_resnext101_32x4d
-from torchvision.models.resnet import resnet50, resnet101
+from models.backbones.se_resnet_ibn_a import se_resnet101_ibn_a
+from models.backbones.senet import se_resnext101_32x4d
+from torchvision.models.resnet import resnet50
 
 def make_model(args):
     return MGNv1(args)
 
-class MGNv6(nn.Module):
+class MGNv4(nn.Module):
     def __init__(self, class_num=1000):
-        super(MGNv6, self).__init__()
+        super(MGNv4, self).__init__()
         num_classes = class_num
 
-        # resnet = se_resnet101_ibn_a(pretrained=True)
-        resnet = resnet101_ibn_a(pretrained=True)
+        resnet = se_resnet101_ibn_a(pretrained=True)
+        # resnet = resnet50(pretrained=True)
         # resnet = se_resnext101_32x4d()
 
         # Modifiy the stride of last conv layer
@@ -30,37 +29,25 @@ class MGNv6(nn.Module):
             resnet.relu,
             resnet.maxpool,
             resnet.layer1,
-            resnet.layer2,
-            resnet.layer3[0],
+            resnet.layer2[0],
         )
 
-        res_conv3 = nn.Sequential(*resnet.layer3[1:])
+        res_conv3 = nn.Sequential(*resnet.layer2[1:])
 
 
-        self.p1 = nn.Sequential(copy.deepcopy(res_conv3), copy.deepcopy(resnet.layer4))
-        self.p2 = nn.Sequential(copy.deepcopy(res_conv3), copy.deepcopy(resnet.layer4))
+        self.p1 = nn.Sequential(copy.deepcopy(res_conv3), copy.deepcopy(resnet.layer3), copy.deepcopy(resnet.layer4))
 
         self.gap = nn.AdaptiveAvgPool2d(1)
-        #self.avgpool_zp1 = nn.AvgPool2d(kernel_size=(12, 8)) 384x128
-        self.avgpool_zp1 = nn.AvgPool2d(kernel_size=(8, 8))  # 256x128
 
         reduction = nn.Sequential(nn.BatchNorm2d(2048), nn.Conv2d(2048, 256, 1, bias=False), nn.BatchNorm2d(256))#, nn.ReLU())
         self._init_reduction(reduction)
 
         self.reduction_g_0 = copy.deepcopy(reduction)
-        self.reduction_g_1 = copy.deepcopy(reduction)
-
-        self.reduction_l_0_0 = copy.deepcopy(reduction)
-        self.reduction_l_0_1 = copy.deepcopy(reduction)
 
         fc_layer = nn.Sequential(nn.Dropout(), nn.Linear(256, num_classes))
         self._init_fc(fc_layer)
 
         self.fc_id_g_0 = copy.deepcopy(fc_layer)
-        self.fc_id_g_1 = copy.deepcopy(fc_layer)
-
-        self.fc_id_l_0_0 = copy.deepcopy(fc_layer)
-        self.fc_id_l_0_1 = copy.deepcopy(fc_layer)
 
     @staticmethod
     def _init_reduction(reduction):
@@ -103,43 +90,19 @@ class MGNv6(nn.Module):
         ('zp2:', (64, 2048, 2, 1))
         ('zp3:', (64, 2048, 3, 1))
         '''
-        x = self.backone(x) #(64, 1024, 24, 8)
-        h = x.size(2)
-        y1 = torch.cat([x[:, :, :h//2, :], x[:, :, h//2:, :]], 0)
-        y1 = self.p1(y1)  # (64, 2048, 24, 8)
-        n1 = y1.size(0) // 2
-        y1 = torch.cat([y1[:n1, :, :, :], y1[n1:, :, :, :]], 2)
-
-        y2 = self.p2(x)
+        x = self.backone(x)
+        y1 = self.p1(x)
 
         zg_p1 = self.gap(y1)  # (64, 2048, 1, 1)
-        zg_p2 = self.gap(y2)
-
-        zp1 = self.avgpool_zp1(y1)
-        z0_p1 = zp1[:, :, 0:1, :]
-        z1_p1 = zp1[:, :, 1:2, :]
-
 
         fg_p1 = self.reduction_g_0(zg_p1).squeeze(dim=3).squeeze(dim=2)
-        fg_p2 = self.reduction_g_1(zg_p2).squeeze(dim=3).squeeze(dim=2)
-        global_triplet = [fg_p1, fg_p2]
-
-        f0_p1 = self.reduction_l_0_0(z0_p1).squeeze(dim=3).squeeze(dim=2)
-        f1_p1 = self.reduction_l_0_1(z1_p1).squeeze(dim=3).squeeze(dim=2)
-
-        local_triplet = [
-            torch.cat([f0_p1, f1_p1], 1),
-        ]
-
+        global_triplet = [fg_p1]
+        local_triplet = []
         #
         l_p1 = self.fc_id_g_0(fg_p1)
-        l_p2 = self.fc_id_g_1(fg_p2)
-        global_softmax = [l_p1, l_p2]
+        global_softmax = [l_p1]
 
         local_softmaxs = []
-        l0_p1 = self.fc_id_l_0_0(f0_p1)
-        l1_p1 = self.fc_id_l_0_1(f1_p1)
-        local_softmaxs.append([l0_p1, l1_p1])
 
         return global_softmax, local_softmaxs, global_triplet, local_triplet
 

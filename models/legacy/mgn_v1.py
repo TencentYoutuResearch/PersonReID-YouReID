@@ -3,8 +3,8 @@ import copy
 import torch
 from torch import nn
 
-from .backbones.se_resnet_ibn_a import se_resnet101_ibn_a
-from .backbones.senet import se_resnext101_32x4d
+from models.backbones.se_resnet_ibn_a import se_resnet101_ibn_a
+from models.backbones.senet import se_resnext101_32x4d
 from torchvision.models.resnet import resnet50
 
 def make_model(args):

@@ -67,7 +67,7 @@ def bulid_dataset():
 
     return train_loader, test_loader
 
-
+    torch.hub
 def main():
     if config.get('seed') is not None:
         random.seed(config.get('seed'))
@@ -82,13 +82,13 @@ def main():
     # Data loading code
     train_loader, test_loader = bulid_dataset()
     # create models
-    model_config = config.get('model_config')
-    net = models.__dict__[model_config['name']]
+    mconfig = config.get('model_config')
+    net = models.__dict__[mconfig['name']]
     if not config.get('use_fp16') and len(config.get('gpus')) != 1:
-        model = net(num_classes=train_loader.dataset.class_num)
+        model = net(num_classes=train_loader.dataset.class_num, num_layers=mconfig['num_layers'])
         model = torch.nn.DataParallel(model).cuda()
     else:
-        model = net(num_classes=train_loader.dataset.class_num).cuda()
+        model = net(num_classes=train_loader.dataset.class_num, num_layers=mconfig['num_layers']).cuda()
     mcfg = config.get('model_config')
 
     if config.get('eval'):

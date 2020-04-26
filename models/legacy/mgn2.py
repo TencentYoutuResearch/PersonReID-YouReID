@@ -5,7 +5,7 @@ from torch import nn
 import torch.nn.functional as F
 
 from torchvision.models.resnet import resnet50, Bottleneck, resnet101, resnet152
-from .backbones import senet
+from models.backbones import senet
 def make_model(args):
     return MGN(args)
 

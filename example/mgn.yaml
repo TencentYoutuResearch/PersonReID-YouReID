@@ -14,7 +14,7 @@ dataset_config:
 optm_config:
   name: SGD
   mode: train
-  weight_decay: 0.0005
+  weight_decay: 0.001
   warmup_factor: 0.
   momentum: 0.9
   epochs: 80
