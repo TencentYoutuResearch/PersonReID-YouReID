@@ -7,8 +7,9 @@ dataset_config:
   batch_size: 128 # 128 是fp32 2卡配置
   load_img_to_cash: 1
   least_image_per_class: 4
-  use_tf_sample: 0 # defalut 0
-  mgn_style_aug: true # defalut false
+  use_tf_sample: 0
+  use_random_pad: 0
+  mgn_style_aug: false
 
 optm_config:
   name: SGD
@@ -22,7 +23,9 @@ optm_config:
   resume: ''
 
 model_config:
-  name: MGNv2
+  name: PCB
+  num_layers: 50 #50, 101, 101d_32x8d
+  stripe: 2 #6
 
 loss:
   margin: 0.5

@@ -147,6 +147,7 @@ class Market1501(data.Dataset):
 
             if part in ['train', 'train_all']:
                 if mgn_style_aug:
+                    print('use random padding')
                     self.transform = transforms.Compose([
                         transforms.RandomHorizontalFlip(),
                         my_transforms.RandomPadding(),  #optional

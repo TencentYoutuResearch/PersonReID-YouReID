@@ -67,7 +67,6 @@ def bulid_dataset():
 
     return train_loader, test_loader
 
-    torch.hub
 def main():
     if config.get('seed') is not None:
         random.seed(config.get('seed'))
@@ -83,12 +82,14 @@ def main():
     train_loader, test_loader = bulid_dataset()
     # create models
     mconfig = config.get('model_config')
-    net = models.__dict__[mconfig['name']]
+    model_name = mconfig['name']
+    del mconfig['name']
+    net = models.__dict__[model_name]
     if not config.get('use_fp16') and len(config.get('gpus')) != 1:
-        model = net(num_classes=train_loader.dataset.class_num, num_layers=mconfig['num_layers'])
+        model = net(num_classes=train_loader.dataset.class_num, **mconfig)
         model = torch.nn.DataParallel(model).cuda()
     else:
-        model = net(num_classes=train_loader.dataset.class_num, num_layers=mconfig['num_layers']).cuda()
+        model = net(num_classes=train_loader.dataset.class_num, **mconfig).cuda()
     mcfg = config.get('model_config')
 
     if config.get('eval'):
@@ -107,7 +108,7 @@ def main():
     parameters = model.parameters()
     criterion = nn.CrossEntropyLoss().cuda()
     # criterion = loss.CrossEntropyLabelSmooth(num_classes=data.class_num).cuda()
-    tri_criterion = loss.TripletLoss(margin=mcfg['margin']).cuda()
+    tri_criterion = loss.TripletLoss(margin=config.get('loss')['margin']).cuda()
 
     ocfg = config.get('optm_config')
     if ocfg['name'] == 'SGD':

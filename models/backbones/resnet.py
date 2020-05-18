@@ -30,7 +30,9 @@ class Bottleneck(nn.Module):
 
     def __init__(self, inplanes, planes,
                  with_ibn=False, gcb=None,
-                 stride=1, downsample=None, groups=1,base_width=64):
+                 stride=1, downsample=None, groups=1, base_width=64,
+                 use_non_local=False
+                 ):
         super(Bottleneck, self).__init__()
         self.with_gcb = gcb
         width = int(planes * (base_width / 64.)) * groups
@@ -105,7 +107,8 @@ class ResNet(nn.Module):
         self.layer4 = self._make_layer(block, 512, layers[3], stride=last_stride,
                                        gcb=stage_with_gcb[3])
 
-    def _make_layer(self, block, planes, blocks, stride=1, with_ibn=False, gcb=None):
+    def _make_layer(self, block, planes, blocks, stride=1,
+                    with_ibn=False, gcb=None, with_non_local=False):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(

@@ -7,6 +7,7 @@ import torch
 from torch import nn
 from .backbones.resnet import resnet50, resnet101, resnext101_32x8d
 from .backbones.resnest import resnest50, resnest101, resnest200, resnest269
+import copy
 
 resnest_zoo = {
     'resnest50': resnest50,
@@ -15,15 +16,16 @@ resnest_zoo = {
     'resnest269': resnest269
 }
 
-class Baseline(nn.Module):
+class MPCB(nn.Module):
     def __init__(self,
                  num_classes=1000,
                  num_layers=50,
                  gcb=False,
                  with_ibn=False,
-                 reduce_dim=768,
+                 reduce_dim=256,
+                 stripe=6,
                  stage_with_gcb_str='0,1,2,3'):
-        super(Baseline, self).__init__()
+        super(MPCB, self).__init__()
         stage_with_gcb = [False, False, False, False]
         if gcb and stage_with_gcb_str:
             stage_with_gcb_list = map(int, stage_with_gcb_str.split(','))
@@ -47,20 +49,25 @@ class Baseline(nn.Module):
                                                   )
 
         self.gap = nn.AdaptiveAvgPool2d(1)
-        self.gmp = nn.AdaptiveMaxPool2d(1)
+        self.stripe = stripe
 
-        self.embedding_layer = nn.Conv2d(4096, reduce_dim, kernel_size=1, stride=1, bias=False)
-        nn.init.kaiming_normal_(self.embedding_layer.weight, mode='fan_out')
-        self.bn = nn.Sequential(nn.BatchNorm2d(reduce_dim))
-        self._init_bn(self.bn)
+        embedding_layer = nn.Sequential(
+                                    nn.Conv2d(2048, reduce_dim, kernel_size=1, stride=1, bias=False),
+                                    nn.BatchNorm2d(reduce_dim)
+                                )
+        nn.init.kaiming_normal_(embedding_layer[0].weight, mode='fan_out')
+        self._init_bn(embedding_layer[1])
 
-        self.fc_layer = nn.Sequential(nn.Dropout(), nn.Linear(reduce_dim, num_classes))
-        self._init_fc(self.fc_layer)
+        fc_layer = nn.Sequential(nn.Dropout(), nn.Linear(reduce_dim, num_classes))
+        self._init_fc(fc_layer)
+
+        self.embedding_layers = nn.ModuleList([copy.deepcopy(embedding_layer) for _ in range(stripe+1)])
+        self.fc_layers = nn.ModuleList([copy.deepcopy(fc_layer) for _ in range(stripe+1)])
 
     @staticmethod
     def _init_bn(bn):
-        nn.init.constant_(bn[0].weight, 1.)
-        nn.init.constant_(bn[0].bias, 0.)
+        nn.init.constant_(bn.weight, 1.)
+        nn.init.constant_(bn.bias, 0.)
 
     @staticmethod
     def _init_fc(fc):
@@ -71,14 +78,21 @@ class Baseline(nn.Module):
     def forward(self, x):
         x = self.resnet(x)
         # print(x.shape)
-        x1 = self.gap(x)
-        x2 = self.gmp(x)
-        x = torch.cat([x1, x2], 1)
-        x = self.embedding_layer(x)
-        x = self.bn(x).squeeze(dim=3).squeeze(dim=2)
-        y = self.fc_layer(x)
+        softmax_logits, triplet_logits = [], []
+        stride = 24 // self.stripe
+        for i in range(self.stripe):
+            s = x[:, :, i*stride:(i+1) * stride, :]
+            s = self.gap(s)
+            s = self.embedding_layers[i](s).squeeze(dim=3).squeeze(dim=2)
+            t = self.fc_layers[i](s)
+            triplet_logits.append(s)
+            softmax_logits.append(t)
+        triplet_logit = torch.cat(triplet_logits, dim=1)
 
-        return [y], [x]
+        x = self.gap(x)
+        x = self.embedding_layers[-1](x).squeeze(dim=3).squeeze(dim=2)
+        y = self.fc_layers[-1](x)
+        softmax_logits.append(y)
+        return softmax_logits, [triplet_logit, x]
 
-    # def compute_loss(self, x):
-    #     cls_logit, tri_logit = self.forward(x)
+

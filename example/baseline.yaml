@@ -17,14 +17,14 @@ optm_config:
   weight_decay: 0.0005
   warmup_factor: 0.
   momentum: 0.9
-  epochs: 80
+  epochs: 40
   start_epoch: 0
   lr: 0.05  #128 0.05
   resume: ''
 
 model_config:
   name: Baseline
-  num_layers: 101_32x8d #50, 101, 101d_32x8d
+  num_layers: 50 #50, 101, 101d_32x8d
   margin: 0.5
   alpha: 1
 
