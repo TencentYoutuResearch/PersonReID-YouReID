@@ -8,7 +8,7 @@ dataset_config:
   load_img_to_cash: 1
   least_image_per_class: 4
   use_tf_sample: 0 # defalut 0
-  mgn_style_aug: true # defalut false
+  mgn_style_aug: false # defalut false
 
 optm_config:
   name: SGD
@@ -22,7 +22,8 @@ optm_config:
   resume: ''
 
 model_config:
-  name: MGNv2
+  name: MGN
+  num_layers: 101_ibn
 
 loss:
   margin: 0.5

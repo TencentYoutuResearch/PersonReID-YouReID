@@ -120,9 +120,10 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1000):
+    def __init__(self, block, layers, num_classes=1000, last_stride=2, for_test=True):
         scale = 64
         self.inplanes = scale
+        self.for_test = for_test
         super(ResNet, self).__init__()
         self.conv1 = nn.Conv2d(3, scale, kernel_size=7, stride=2, padding=3,
                                bias=False)
@@ -132,7 +133,7 @@ class ResNet(nn.Module):
         self.layer1 = self._make_layer(block, scale, layers[0])
         self.layer2 = self._make_layer(block, scale * 2, layers[1], stride=2)
         self.layer3 = self._make_layer(block, scale * 4, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, scale * 8, layers[3], stride=2)
+        self.layer4 = self._make_layer(block, scale * 8, layers[3], stride=last_stride)
         self.avgpool = nn.AvgPool2d(7)
         self.fc = nn.Linear(scale * 8 * block.expansion, num_classes)
 
@@ -177,31 +178,31 @@ class ResNet(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
-
-        x = self.avgpool(x)
-        x = x.view(x.size(0), -1)
-        x = self.fc(x)
+        if not self.for_test:
+            x = self.avgpool(x)
+            x = x.view(x.size(0), -1)
+            x = self.fc(x)
 
         return x
 
 
-def resnet50_ibn_a(pretrained=False, **kwargs):
+def resnet50_ibn_a(pretrained=False, last_stride=1, **kwargs):
     """Constructs a ResNet-50 model.
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
+    model = ResNet(Bottleneck, [3, 4, 6, 3], last_stride=last_stride, **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
     return model
 
 
-def resnet101_ibn_a(pretrained=False, **kwargs):
+def resnet101_ibn_a(pretrained=False, last_stride=1, **kwargs):
     """Constructs a ResNet-101 model.
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(Bottleneck, [3, 4, 23, 3], **kwargs)
+    model = ResNet(Bottleneck, [3, 4, 23, 3], last_stride=last_stride, **kwargs)
     if pretrained:
         state_dict = torch.load(model_urls['resnet101_ibn_a'])
         new_state_dict = OrderedDict()

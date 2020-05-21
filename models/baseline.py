@@ -7,6 +7,7 @@ import torch
 from torch import nn
 from .backbones.resnet import resnet50, resnet101, resnext101_32x8d
 from .backbones.resnest import resnest50, resnest101, resnest200, resnest269
+from .backbones.resnet_ibn_a import resnet50_ibn_a, resnet101_ibn_a
 
 resnest_zoo = {
     'resnest50': resnest50,
@@ -45,6 +46,8 @@ class Baseline(nn.Module):
                                                   with_top=False,
                                                   last_stride=1,
                                                   )
+        elif num_layers == '101_ibn':
+            self.resnet = resnet101_ibn_a(pretrained=True, last_stride=1)
 
         self.gap = nn.AdaptiveAvgPool2d(1)
         self.gmp = nn.AdaptiveMaxPool2d(1)

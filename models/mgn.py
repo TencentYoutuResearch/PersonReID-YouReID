@@ -1,20 +1,24 @@
 import copy
 import torch
 from torch import nn
-from torchvision.models.resnet import resnet50
+from .backbones.resnet import resnet50, resnet101, resnext101_32x8d
+from .backbones.resnet_ibn_a import resnet50_ibn_a, resnet101_ibn_a
 import math
 
 class MGN(nn.Module):
-    def __init__(self, num_classes=1000, stripes=[2, 3]):
+    def __init__(self, num_classes=1000, stripes=[2, 3], num_layers=50):
         super(MGN, self).__init__()
         self.stripes = stripes
-
-        resnet = resnet50(pretrained=True)
-        # resnet = resnext101_32x8d(pretrained=True)
-        resnet.layer4[0].conv2 = nn.Conv2d(512, 512, kernel_size=3, bias=False, stride=1, padding=1)
-        resnet.layer4[0].downsample = nn.Sequential(nn.Conv2d(1024, 2048, kernel_size=1, stride=1, bias=False),
-                                                    nn.BatchNorm2d(2048))
-
+        if num_layers == 50:
+            resnet = resnet50(pretrained=True, last_stride=1)
+        elif num_layers == 101:
+            resnet = resnet101(pretrained=True, last_stride=1)
+        elif num_layers == '101_32x8d':
+            resnet = resnext101_32x8d(pretrained=True, last_stride=1)
+        elif num_layers == '50_ibn':
+            resnet = resnet50_ibn_a(pretrained=True, last_stride=1)
+        elif num_layers == '101_ibn':
+            resnet = resnet101_ibn_a(pretrained=True, last_stride=1)
         self.backone = nn.Sequential(
             resnet.conv1,
             resnet.bn1,

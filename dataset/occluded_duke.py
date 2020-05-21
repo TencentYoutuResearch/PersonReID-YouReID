@@ -114,6 +114,7 @@ class Occluded_Duke(data.Dataset):
 
             classes, imgs = self._postprocess(imgs, self.least_image_per_class)
         else:
+            classes = []
             if part == 'query':
                 with open(os.path.join(root, 'query.list')) as rf:
                     q_list = rf.read().splitlines()
@@ -146,8 +147,9 @@ class Occluded_Duke(data.Dataset):
                                              std=[0.229, 0.224, 0.225]),
                     ])
                 else:
-                    re1 = my_transforms.RandomErasing(probability=0.5, sl=0.01, sh=0.04)
-                    re2 = my_transforms.RandomErasing(probability=0.5, sl=0.16, sh=0.4)
+                    # re1 = my_transforms.RandomErasing(probability=0.5, sl=0.01, sh=0.04)
+                    # re2 = my_transforms.RandomErasing(probability=0.5, sl=0.16, sh=0.4)
+                    re = my_transforms.RandomErasing()
                     tlist = [
                                       transforms.RandomHorizontalFlip(),
                                       transforms.Resize(size),
@@ -157,10 +159,9 @@ class Occluded_Duke(data.Dataset):
                                       transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                            std=[0.229, 0.224, 0.225]),
                                                          ]
-                    t1 = tlist + [re1]
-                    t2 = tlist + [re2]
-                    self.transform1 = transforms.Compose(t1)
-                    self.transform2 = transforms.Compose(t2)
+                    t = tlist + [re]
+                    self.transform = transforms.Compose(t)
+                    # self.transform2 = transforms.Compose(t2)
         else:
             self.transform = default_transforms
 
@@ -232,14 +233,14 @@ class Occluded_Duke(data.Dataset):
         path, target, _ = self.imgs[index]
         if not self.load_img_to_cash:
             img = self.loader(path)
-            img1 = self.transform1(img)
-            img2 = self.transform2(img)
+            img = self.transform(img)
+            # img2 = self.transform2(img)
         else:
             src = self.cash_imgs[index]
-            img1 = self.transform1(src)
-            img2 = self.transform2(src)
+            img = self.transform(src)
+            # img2 = self.transform2(src)
 
-        img = np.stack([img1, img2], axis=0)
+        # img = np.stack([img1, img2], axis=0)
 
         if self.require_path:
             _, path = os.path.split(path)
