@@ -28,7 +28,7 @@
 ||88.97/95.31|resnet101
 ||89.79/95.67|resnet101_32x8d
 ||90.52/95.78|resnet101_32x8d_weak
-||90.46/95.96|baseline_101_ibn_fp16
+||90.46/95.96|resnet_101_ibn
 |pcb|85.47/94.54|resnet50
 |mgn|89.16/95.87|resnet50
 

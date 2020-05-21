@@ -118,11 +118,11 @@ class Occluded_Duke(data.Dataset):
             if part == 'query':
                 with open(os.path.join(root, 'query.list')) as rf:
                     q_list = rf.read().splitlines()
-                    imgs = [os.path.join(root, 'bounding_box_test', q) for q in q_list]
+                    imgs = [(os.path.join(root, 'query', q), 0, 0) for q in q_list]
             else:
                 with open(os.path.join(root, 'gallery.list')) as rf:
                     g_list = rf.read().splitlines()
-                    imgs = [os.path.join(root, 'bounding_box_test', g) for g in g_list]
+                    imgs = [(os.path.join(root, 'bounding_box_test', g), 0, 0) for g in g_list]
 
 
         if len(imgs) == 0:

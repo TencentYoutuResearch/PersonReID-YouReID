@@ -32,7 +32,7 @@ def eval_result(data, root, use_metric_cuhk03=False,
         if use_pcb_format:
             pid, cam, _ = q.split('_')
             query_label.append(int(pid))
-            query_cam.append(int(cam))
+            query_cam.append(int(cam.split('c')[-1]))
         else:
             query_label.append(int(q.split('.')[0].split('_')[0]))
             query_cam.append(0)
@@ -43,7 +43,7 @@ def eval_result(data, root, use_metric_cuhk03=False,
         if use_pcb_format:
             pid, cam, _ = g.split('_')
             gallery_label.append(int(pid))
-            gallery_cam.append(int(cam))
+            gallery_cam.append(int(cam.split('c')[-1]))
         else:
             gallery_label.append(int(g.split('.')[0].split('_')[0]))
             gallery_cam.append(1)
