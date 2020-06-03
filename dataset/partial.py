@@ -16,8 +16,8 @@ import glob
 
 class PartialOrOccluded(data.Dataset):
     def __init__(self, root='/data1/home/fufuyu/dataset/',
-                 name = 'Partial_iLIDS',
-                 part='train', style='partial',
+                 name = 'Partial-REID',
+                 part='train', style='occluded',
                  loader=read_image, size=(384,128),
                  default_transforms=None, **kwargs):
         assert style in ['partial', 'occluded']

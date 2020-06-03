@@ -5,7 +5,7 @@
 
 import torch
 from torch import nn
-from .backbones import resnet50, resnet101, resnext101_32x8d
+from .backbones.resnet import resnet50, resnet101, resnext101_32x8d
 from .backbones.resnest import resnest50, resnest101, resnest200, resnest269
 from .backbones.resnet_ibn_a import resnet50_ibn_a, resnet101_ibn_a
 
@@ -15,7 +15,6 @@ resnest_zoo = {
     'resnest200': resnest200,
     'resnest269': resnest269
 }
-from core.layers import GeneralizedMeanPoolingP
 
 class Baseline(nn.Module):
     def __init__(self,
@@ -24,7 +23,6 @@ class Baseline(nn.Module):
                  gcb=False,
                  with_ibn=False,
                  reduce_dim=768,
-                 use_gem_pool=False,
                  stage_with_gcb_str='0,1,2,3'):
         super(Baseline, self).__init__()
         stage_with_gcb = [False, False, False, False]
@@ -51,17 +49,14 @@ class Baseline(nn.Module):
         elif num_layers == '101_ibn':
             self.resnet = resnet101_ibn_a(pretrained=True, last_stride=1)
 
-        self.use_gem_pool = use_gem_pool
-        if not self.use_gem_pool:
-            self.gap = nn.AdaptiveAvgPool2d(1)
-            self.gmp = nn.AdaptiveMaxPool2d(1)
-            input_dim = 4096
-        else:
-            print('use use_gem_pool')
-            self.gemp = GeneralizedMeanPoolingP()
-            input_dim = 2048
+        self.gap = nn.AdaptiveAvgPool2d(1)
+        self.gmp = nn.AdaptiveMaxPool2d(1)
+        self.gap_2 = nn.AvgPool2d((12, 4))
+        self.gmp_2 = nn.MaxPool2d((12, 4))
+        self.gap_4 = nn.AvgPool2d((6, 2))
+        self.gmp_4 = nn.MaxPool2d((6, 2))
 
-        self.embedding_layer = nn.Conv2d(input_dim, reduce_dim, kernel_size=1, stride=1, bias=False)
+        self.embedding_layer = nn.Conv2d(4096, reduce_dim, kernel_size=1, stride=1, bias=False)
         nn.init.kaiming_normal_(self.embedding_layer.weight, mode='fan_out')
         self.bn = nn.Sequential(nn.BatchNorm2d(reduce_dim))
         self._init_bn(self.bn)
@@ -82,13 +77,15 @@ class Baseline(nn.Module):
 
     def forward(self, x):
         x = self.resnet(x)
+        b = x.size(0)
         # print(x.shape)
-        if not self.use_gem_pool:
-            x1 = self.gap(x)
-            x2 = self.gmp(x)
-            x = torch.cat([x1, x2], 1)
-        else:
-            x = self.gemp(x)
+        x1 = self.gap(x)
+        x2 = self.gmp(x)
+        x1_2 = self.gap_2(x).view((b, -1))
+        x2_2 = self.gmp_2(x).view((b, -1))
+        x1_4 = self.gap_4(x).view((b, -1))
+        x2_4 = self.gmp_4(x).view((b, -1))
+        x = torch.cat([x1, x2, x1_2, x2_2, x1_4, x2_4], 1)
         x = self.embedding_layer(x)
         x = self.bn(x).squeeze(dim=3).squeeze(dim=2)
         y = self.fc_layer(x)

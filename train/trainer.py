@@ -32,7 +32,8 @@ def bulid_dataset():
     """"""
     cfg = config.get('dataset_config')
     if cfg['name'] == 'PartialOrOccluded':
-        params = {'style': cfg['style'], 'name': cfg['dataname']}
+        # params = {'style': cfg['style'], 'name': cfg['dataname']}
+        params = {}
     else:
         params = {'mgn_style_aug': cfg['mgn_style_aug']}
     data = dataset.__dict__[cfg['name']](part='train',
@@ -95,20 +96,25 @@ def main():
     if config.get('eval'):
         ckpt = os.path.join(config.get('task_id'), 'checkpoint.pth')
         checkpoint = torch.load(ckpt)
-        model.load_state_dict(checkpoint['state_dict'])
+        keys = list(checkpoint['state_dict'].keys())
+        for k in keys:
+            if 'fc_layer' in k:
+                del checkpoint['state_dict'][k]
+        model.load_state_dict(checkpoint['state_dict'], strict=False)
 
         print("=> loading checkpoint '{}'".format(ckpt))
-        extract(test_loader, model)
+        # extract(test_loader, model)
         evaluate.eval_result(config.get('dataset_config')['name'],
                              root=config.get('task_id'),
                              use_pcb_format=config.get('dataset_config')['name'] in ['Market1501']
                              )
         return
 
-    parameters = model.parameters()
+
     criterion = nn.CrossEntropyLoss().cuda()
-    # criterion = loss.CrossEntropyLabelSmooth(num_classes=data.class_num).cuda()
+    criterion = loss.CrossEntropyLabelSmooth(num_classes=train_loader.dataset.class_num).cuda()
     tri_criterion = loss.TripletLoss(margin=config.get('loss')['margin']).cuda()
+    parameters = model.parameters()
 
     ocfg = config.get('optm_config')
     if ocfg['name'] == 'SGD':
@@ -178,7 +184,10 @@ def main():
     logger.write('cost time: %d H %d M %d s' % (cost_h, cost_m, cost_s))
         #
     extract(test_loader, model)
-    evaluate.eval_result(config.get('dataset_config')['name'], root=config.get('task_id'))
+    evaluate.eval_result(config.get('dataset_config')['name'],
+                         root=config.get('task_id'),
+                         use_pcb_format=config.get('dataset_config')['name'] in ['Market1501']
+                         )
 
 
 def train(train_loader, model, criterion, tri_criterion, optimizer, lr_scheduler, epoch):
