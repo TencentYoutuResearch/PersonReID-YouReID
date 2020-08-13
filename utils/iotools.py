@@ -7,7 +7,8 @@ import json
 import shutil
 from PIL import Image
 import torch
-
+import numpy as np
+import cv2
 
 def mkdir_if_missing(directory):
     if not osp.exists(directory):
@@ -46,7 +47,7 @@ def save_checkpoint(state, is_best=False, fpath='checkpoint.pth.tar'):
 
 
 IMG_EXTENSIONS = [
-    '.jpg', '.JPG', '.jpeg', '.JPEG',
+    '.jpg', '.JPG', '.jpeg', '.JPEG', '.tif',
     '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP', '.mat', '.MAT'
 ]
 
@@ -55,7 +56,7 @@ def is_image_file(filename):
     return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
 
 
-def read_image(path):
+def read_image(path, mask_p=None):
     """Reads image from path using ``PIL.Image``.
 
     Args:
@@ -71,9 +72,18 @@ def read_image(path):
         raise IOError('"{}" is not an image file'.format(path))
     while not got_img:
         try:
+            # if path.endswith('jpg'):
             img = Image.open(path).convert('RGB')
+            # else:
+            #     img = cv2.imread(path)
+            #     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             got_img = True
         except IOError:
             print('IOError incurred when reading "{}". Will redo. Don\'t worry. Just chill.'.format(path))
             pass
-    return img
+
+    if mask_p is None:
+        return img
+    else:
+        mask = np.load(mask_p)
+        return img, mask

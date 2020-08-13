@@ -3,12 +3,60 @@
 # @Author: fufuyu
 # @Email:  fufuyu@tencen.com
 
-from .backbones import model_zoo
+from .backbones.resnet import ResNet, Bottleneck
 from core.loss import *
 from core.layers import GeneralizedMeanPoolingP
+import numpy as np
 
-class Baseline(nn.Module):
+class ShuffleResNet(ResNet):
     def __init__(self,
+                 pretrained=True,
+                 split_stage=3,
+                 split_num=3,
+                 last_stride=1,
+                 block=Bottleneck,
+                 layers=[3, 4, 6, 3],
+                 model_name = 'resnet50',
+                 use_non_local=False,
+                 groups=1, width_per_group=64):
+        super(ShuffleResNet, self).__init__(
+            last_stride=last_stride, block=block, layers=layers,
+            model_name=model_name, use_non_local=use_non_local, groups=groups,
+            width_per_group=width_per_group
+        )
+        self.split_stage= split_stage
+        self.split_num = split_num
+        if pretrained:
+            self.load_pretrain()
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+
+        x = self.layer1(x)
+        x = self.layer2(x)
+        if self.split_stage == 3:
+            x = list(torch.split(x, x.size()[2] // self.split_num, dim=2))
+            np.random.shuffle(x)
+            x = torch.cat(x, dim=2)
+        x = self.layer3(x)
+        if self.split_stage == 4:
+            x = list(torch.split(x, x.size()[2] // self.split_num, dim=2))
+            np.random.shuffle(x)
+            x = torch.cat(x, dim=2)
+        x = self.layer4(x)
+        # if self.split_stage > 0:
+        #     x = list(torch.split(x, x.size()[0] // self.split_num, dim=0))
+        #     np.random.shuffle(x)
+        #     x = torch.cat(x, dim=2)
+        return x
+
+class BaselineShuffle(nn.Module):
+    def __init__(self,
+                 split_stage=3,
+                 split_num=3,
                  num_classes=1000,
                  num_layers=50,
                  last_stride=1,
@@ -18,14 +66,13 @@ class Baseline(nn.Module):
                  margin=0.5,
                  use_non_local=False
                  ):
-        super(Baseline, self).__init__()
+        super(BaselineShuffle, self).__init__()
         kwargs = {
             'use_non_local': use_non_local
         }
-        self.resnet = model_zoo[num_layers](
-            pretrained=True, last_stride=last_stride,
-            **kwargs
-        )
+        self.resnet = ShuffleResNet(split_stage=split_stage,
+                                  split_num=split_num
+                                  )
 
         self.pool_type = pool_type
         if self.pool_type == 'baseline':

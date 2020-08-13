@@ -27,8 +27,8 @@ class RandomIdentitySampler(Sampler):
         self.use_all_sample = use_all_sample
 
         self.index_dic = defaultdict(list)
-        for index, (_, pid, _) in enumerate(self.data_source.imgs):
-            self.index_dic[pid].append(index)
+        for index, imginfo in enumerate(self.data_source.imgs):
+            self.index_dic[imginfo[1]].append(index)
         self.pids = list(self.index_dic.keys())
 
         # estimate number of examples in an epoch

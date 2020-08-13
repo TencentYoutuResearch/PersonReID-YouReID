@@ -26,8 +26,10 @@ optm_config:
   resume: ''
 
 model_config:
-  name: Baseline
+  name: BaselineSplit
   num_layers: resnet50 #50, 101, 101d_32x8d
+  split_stage: 4
+  split_num: 3
   loss_type: ['softmax', 'triplet', 'labelsmooth']
 #  pool_type: norm
 

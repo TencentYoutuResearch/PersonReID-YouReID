@@ -8,7 +8,7 @@ import scipy.io as sio
 import re
 import errno
 from PIL import Image
-from .default_parser import init_parser
+# from .default_parser import init_parser
 from .sampler import RandomIdentitySampler, RandomCameraSampler
 import numpy
 from .re_ranking import re_ranking

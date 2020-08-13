@@ -33,10 +33,10 @@ class PartialOrOccluded(data.Dataset):
                 prefix = 'partial_body_images'
             else:
                 prefix = 'occluded_body_images'
-            for q in glob.glob(os.path.join(self.root, "%s/*.jpg" % prefix)):
+            for q in sorted(glob.glob(os.path.join(self.root, "%s/*.jpg" % prefix))):
                 q_list.append((q, 0, 0))
             g_list = []
-            for g in glob.glob(os.path.join(self.root, "whole_body_images/*.jpg")):
+            for g in sorted(glob.glob(os.path.join(self.root, "whole_body_images/*.jpg"))):
                 g_list.append((g, 0, 1))
 
             if part == 'query':

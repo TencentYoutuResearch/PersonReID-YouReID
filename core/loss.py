@@ -25,18 +25,22 @@ class TripletLoss(nn.Module):
         margin (float, optional): margin for triplet. Default is 0.3.
     """
 
-    def __init__(self, margin=0.3):
+    def __init__(self, margin=0.3, normalize_feature=True):
         super(TripletLoss, self).__init__()
         self.margin = margin
-        self.ranking_loss = nn.MarginRankingLoss(margin=margin)
+        self.normalize_feature = normalize_feature
+        if margin > 0 :
+            self.ranking_loss = nn.MarginRankingLoss(margin=margin)
+        else:
+            self.ranking_loss = nn.SoftMarginLoss()
 
-    def forward(self, inputs, targets, normalize_feature=True):
+    def forward(self, inputs, targets):
         """
         Args:
             inputs (torch.Tensor): feature matrix with shape (batch_size, feat_dim).
             targets (torch.LongTensor): ground truth labels with shape (num_classes).
         """
-        if normalize_feature:
+        if self.normalize_feature:
             inputs = normalize(inputs, axis=-1)
         n = inputs.size(0)
 
@@ -57,7 +61,10 @@ class TripletLoss(nn.Module):
 
         # Compute ranking hinge loss
         y = torch.ones_like(dist_an)
-        return self.ranking_loss(dist_an, dist_ap, y)
+        if self.margin > 0:
+            return self.ranking_loss(dist_an, dist_ap, y)
+        else:
+            return self.ranking_loss(dist_an - dist_ap, y)
 
 
 
@@ -236,7 +243,7 @@ class ArcMarginProduct(nn.Module):
         return output
 
 
-def one_hot(labels, num_classes, dtype):
+def one_hot(labels, num_classes, dtype=None):
     # eps: Optional[float] = 1e-6) -> torch.Tensor:
     r"""Converts an integer label x-D tensor to a one-hot (x+1)-D tensor.
     Args:
@@ -280,7 +287,7 @@ def one_hot(labels, num_classes, dtype):
 
 
 class Circle(nn.Module):
-    def __init__(self, num_classes, in_feat, scale=128, margin=0.15):
+    def __init__(self, num_classes, in_feat, scale=64, margin=0.35): # 128 0.15
         super().__init__()
         self._num_classes = num_classes
         self._s = scale

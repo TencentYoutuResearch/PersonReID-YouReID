@@ -2,7 +2,6 @@ import random
 import time
 import warnings
 
-import torch
 import torch.nn as nn
 import torch.nn.parallel
 import torch.backends.cudnn as cudnn
@@ -15,10 +14,9 @@ import models
 import dataset
 from utils import *
 import evaluate
-import loss
 
 from core.config import config
-from loss.loss import normalize
+from core.loss import normalize
 
 if config.get('use_fp16'):
     from apex import amp
@@ -31,14 +29,16 @@ logger = Logger(config.get('task_id'))
 def bulid_dataset():
     """"""
     cfg = config.get('dataset_config')
-    if cfg['name'] == 'PartialOrOccluded':
-        # params = {'style': cfg['style'], 'name': cfg['dataname']}
-        params = {}
-    else:
-        params = {'mgn_style_aug': cfg['mgn_style_aug']}
-    data = dataset.__dict__[cfg['name']](part='train',
+    params = {'logger': logger}
+    # if cfg['name'] == 'PartialOrOccluded':
+    #     # params = {'style': cfg['style'], 'name': cfg['dataname']}
+    #     params = {}
+    # else:
+    #     params = {'mgn_style_aug': cfg['mgn_style_aug']}
+    data = dataset.__dict__[cfg['name']](dataname=cfg['train_name'], part='train',
                                          size=(cfg['height'], cfg['width']),
                                          least_image_per_class=cfg['least_image_per_class'],
+                                         load_img_to_cash= cfg['load_img_to_cash'],
                                          **params
                                          )
     train_sampler = RandomIdentitySampler(data, cfg['batch_size'],
@@ -53,14 +53,15 @@ def bulid_dataset():
     test_loader = {
         'query':
             torch.utils.data.DataLoader(
-                dataset.__dict__[cfg['name']](part='query',
+                dataset.__dict__[cfg['name']](dataname=cfg['test_name'], part='query',
                                             require_path=True, size=(cfg['height'], cfg['width']),
                                               **params
                                             ),
                 batch_size=cfg['batch_size'], shuffle=False, num_workers=cfg['workers'], pin_memory=True),
         'gallery':
             torch.utils.data.DataLoader(
-                dataset.__dict__[cfg['name']](part='gallery', require_path=True,
+                dataset.__dict__[cfg['name']](dataname=cfg['test_name'],
+                                              part='gallery', require_path=True,
                                               size=(cfg['height'], cfg['width']),
                                               **params
                                             ),
@@ -94,6 +95,7 @@ def main():
     mcfg = config.get('model_config')
 
     if config.get('eval'):
+        # config['use_fp16'] = False
         ckpt = os.path.join(config.get('task_id'), 'checkpoint.pth')
         checkpoint = torch.load(ckpt)
         keys = list(checkpoint['state_dict'].keys())
@@ -101,19 +103,17 @@ def main():
             if 'fc_layer' in k:
                 del checkpoint['state_dict'][k]
         model.load_state_dict(checkpoint['state_dict'], strict=False)
-
+        print(model)
         print("=> loading checkpoint '{}'".format(ckpt))
-        # extract(test_loader, model)
-        evaluate.eval_result(config.get('dataset_config')['name'],
+        extract(test_loader, model)
+        evaluate.eval_result(config.get('dataset_config')['test_name'],
                              root=config.get('task_id'),
-                             use_pcb_format=config.get('dataset_config')['name'] in ['Market1501']
+                             use_pcb_format=True,
+                             logger=logger
                              )
         return
 
 
-    criterion = nn.CrossEntropyLoss().cuda()
-    criterion = loss.CrossEntropyLabelSmooth(num_classes=train_loader.dataset.class_num).cuda()
-    tri_criterion = loss.TripletLoss(margin=config.get('loss')['margin']).cuda()
     parameters = model.parameters()
 
     ocfg = config.get('optm_config')
@@ -166,7 +166,7 @@ def main():
     start = time.time()
     for epoch in range(start_epoch, ocfg.get('epochs')):
         # train for one epoch
-        train(train_loader, model, criterion, tri_criterion, optimizer, lr_scheduler, epoch)
+        train(train_loader, model, optimizer, lr_scheduler, epoch)
         # save checkpoint
         if not os.path.exists(config.get('task_id')):
             os.makedirs(config.get('task_id'))
@@ -184,13 +184,14 @@ def main():
     logger.write('cost time: %d H %d M %d s' % (cost_h, cost_m, cost_s))
         #
     extract(test_loader, model)
-    evaluate.eval_result(config.get('dataset_config')['name'],
+    evaluate.eval_result(config.get('dataset_config')['test_name'],
                          root=config.get('task_id'),
-                         use_pcb_format=config.get('dataset_config')['name'] in ['Market1501']
+                         use_pcb_format=True,
+                         logger=logger
                          )
 
 
-def train(train_loader, model, criterion, tri_criterion, optimizer, lr_scheduler, epoch):
+def train(train_loader, model, optimizer, lr_scheduler, epoch):
 
     model.train()
     end = time.time()
@@ -202,9 +203,9 @@ def train(train_loader, model, criterion, tri_criterion, optimizer, lr_scheduler
         input = input.cuda(non_blocking=True)
         target = target.cuda(non_blocking=True)
         # compute output
-        outputs = model(input)
-        ce_losses = [criterion(logit, target) for logit in outputs[0]]
-        tri_losses = [tri_criterion(feat, target) for feat in outputs[1]]
+        # ce_losses, tri_losses = model(input, target=target)
+        output = model(input)
+        ce_losses, tri_losses = model.module.compute_loss(output, target)
         ce_loss = torch.sum(torch.stack(ce_losses, dim=0))
         tri_loss = torch.sum(torch.stack(tri_losses, dim=0))
         loss = ce_loss + tri_loss #args.weight*
@@ -245,6 +246,7 @@ def extract(test_data, model):
         with torch.no_grad():
             paths = []
             for i, (input, target, path) in enumerate(val_loader):
+                # print(input[0])
                 input = input.cuda(non_blocking=True)
                 target = target.cuda(non_blocking=True)
                 # compute output
@@ -274,7 +276,7 @@ def extract(test_data, model):
             all_label.shape = (all_label.size, 1)
 
             print(all_feature.shape, all_label.shape)
-            save_feature(p, config.get('dataset_config')['name'], all_feature, all_label, paths)
+            save_feature(p, config.get('dataset_config')['test_name'], all_feature, all_label, paths)
 
 
 def save_feature(part, data, features, labels, paths):

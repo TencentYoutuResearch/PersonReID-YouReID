@@ -17,6 +17,7 @@ model_urls = {
     'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
     'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
     'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
+    'resnet50_ibn_a': os.path.expanduser('~/.torch/models/resnet50_ibn_a.pth.tar'),
     'resnet101_ibn_a': os.path.expanduser('~/.torch/models/resnet101_ibn_a.pth.tar')
 }
 
@@ -120,7 +121,7 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1000, last_stride=2, for_test=True):
+    def __init__(self, block, layers, num_classes=1000, last_stride=2, for_test=True, **kwargs):
         scale = 64
         self.inplanes = scale
         self.for_test = for_test
@@ -193,7 +194,12 @@ def resnet50_ibn_a(pretrained=False, last_stride=1, **kwargs):
     """
     model = ResNet(Bottleneck, [3, 4, 6, 3], last_stride=last_stride, **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
+        state_dict = torch.load(model_urls['resnet50_ibn_a'])
+        new_state_dict = OrderedDict()
+        for k in state_dict['state_dict']:
+            new_k = k.replace('module.', '')
+            new_state_dict[new_k] = state_dict['state_dict'][k]
+        model.load_state_dict(new_state_dict, strict=True)
     return model
 
 

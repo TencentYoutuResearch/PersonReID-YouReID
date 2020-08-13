@@ -6,11 +6,12 @@
 import utils.my_transforms as my_transforms
 import torch
 import torchvision.transforms as transforms
+import torchvision.transforms.functional as F
 import torch.utils.data as data
-from PIL import Image
+import numpy as np
 import os
 import os.path
-import time
+import random
 import scipy.io as sio
 import sys
 sys.path.append("..")
@@ -19,73 +20,12 @@ from utils.iotools import read_image, is_image_file
 import numpy
 from copy import deepcopy
 import pickle
+import glob
 
-def find_classes(config):
-    with open(config, 'r') as f:
-        lines = f.readlines()
-    lines.sort()
-    classes = []
-
-    for line in lines:
-        filename, cls = line.strip().split(' ')
-        if cls not in classes:
-            classes.append(cls)
-
-    class_to_idx = {classes[i]: i for i in range(len(classes))}
-    return classes, class_to_idx
-
-
-def make_dataset(root, config, class_to_idx, classes):
-
-    with open(config, 'r') as f:
-        lines = f.readlines()
-    lines.sort()
-    images = []
-
-
-    for line in lines:
-        filename, c = line.strip().split(' ')
-        if is_image_file(filename):
-            path = os.path.join(root, filename)
-            # print(filename)
-            if c in classes:
-                item = (path, class_to_idx[c], 0)
-                images.append(item)
-
-
-    return images
-
-def make_gallery(root):
-    images = [d for d in os.listdir(root)]
-    imgs = []
-
-    for i in images:
-        path = os.path.join(root, i)
-        # print(filename)
-
-        item = (path, 0, 0)
-        imgs.append(item)
-
-    return imgs
-
-def make_query(root, config):
-    with open(config, 'r') as f:
-        lines = f.readlines()
-    images = []
-
-    for line in lines:
-        filename, c = line.strip().split(' ')
-
-        path = os.path.join(root, filename)
-
-        item = (path, int(c), 0)
-        images.append(item)
-
-
-    return images
-
-class Market1501(data.Dataset):
-    def __init__(self, root='/data1/home/fufuyu/dataset/market1501', part='train',
+class MaskMarket1501(data.Dataset):
+    def __init__(self,
+                 root='/data1/home/fufuyu/dataset/market1501', part='train',
+                 test_dataset='Partial_iLIDS', #Partial_iLIDS Partial-REID Occluded_REID
                  loader=read_image, require_path=False, size=(384,128),
                  least_image_per_class=4, mgn_style_aug=False,
                  load_img_to_cash=False, default_transforms=None, **kwargs):
@@ -96,7 +36,7 @@ class Market1501(data.Dataset):
         self.require_path = require_path
         self.least_image_per_class = least_image_per_class
         self.load_img_to_cash = load_img_to_cash
-
+        self.test_dataset = test_dataset
         with open(os.path.join(root, 'partitions.pkl'), 'rb') as f:
             partitions = pickle.load(f)
 
@@ -114,20 +54,42 @@ class Market1501(data.Dataset):
             for line_i, im_name in enumerate(im_names):
                 id = self.parse_im_name(im_name, 'id')
                 label = trainval_ids2labels[id]
-                imgs.append((os.path.join(root, 'images', im_name), label, 0))
+                mask_name = im_name.split('/')[-1].split('.')[0] + '.npy'
+                mask_path = os.path.join(root, 'masks', mask_name)
+                imgs.append((os.path.join(root, 'images', im_name), label, 0, mask_path))
 
             classes, imgs = self._postprocess(imgs, self.least_image_per_class)
         else:
-            img_list = partitions['test_im_names']
-            test_marks = partitions['test_marks']
-            q_list = []
-            g_list = []
             classes = []
-            for im_name, test_mark in zip(img_list, test_marks):
-                if test_mark == 0:
-                    q_list.append((os.path.join(root, 'images', im_name), 0, 0))
+            if self.test_dataset in ['Partial_iLIDS', 'Partial-REID']:
+                ext = 'jpg'
+            else:
+                ext = 'tif'
+            q_img_list = sorted(glob.glob('/data1/home/fufuyu/dataset/%s/images/occluded_body_images/*.%s' % (self.test_dataset,ext)))
+            g_img_list = sorted(glob.glob('/data1/home/fufuyu/dataset/%s/images/whole_body_images/*.%s' % (self.test_dataset, ext)))
+            q_list, g_list = [], []
+            for q in q_img_list:
+                q_dir = os.path.dirname(q).replace('/images', '/masks')
+                q_name = os.path.basename(q)
+                if self.test_dataset == 'Partial_iLIDS':
+                    q_mask_name = str(int(q_name.split('.')[0])).zfill(4) + '_c1_0000.npy'
+                elif self.test_dataset == 'Partial-REID':
+                    idx, idm = q_name.split('_')
+                    q_mask_name = '_'.join([idx, 'c0', idm.replace('jpg', 'npy')])
                 else:
-                    g_list.append((os.path.join(root, 'images', im_name), 0, 0))
+                    q_mask_name = q_name.replace('tif', 'npy')
+                q_list.append((q, 0, 0, os.path.join(q_dir, q_mask_name)))
+            for g in g_img_list:
+                g_dir = os.path.dirname(g).replace('/images', '/masks')
+                g_name = os.path.basename(g)
+                if self.test_dataset == 'Partial_iLIDS':
+                    g_mask_name = str(int(g_name.split('.')[0])).zfill(4) + '_c0_0000.npy'
+                elif self.test_dataset == 'Partial-REID':
+                    idx, idm = g_name.split('_')
+                    g_mask_name = '_'.join([idx, 'c1', idm.replace('jpg', 'npy')])
+                else:
+                    g_mask_name = g_name.replace('tif', 'npy')
+                g_list.append((g, 0, 0, os.path.join(g_dir, g_mask_name)))
             if part == 'query':
                 imgs = q_list
             else:
@@ -158,10 +120,10 @@ class Market1501(data.Dataset):
                     ])
                 else:
                     self.transform = transforms.Compose([
-                                                         transforms.RandomHorizontalFlip(),
                                                          transforms.Resize(size),
                                                          transforms.Pad(10),
                                                          transforms.RandomCrop(size),
+                                                         transforms.ColorJitter(brightness=0.7, contrast=0.5, saturation=0.1), #, saturation=0.2
                                                          transforms.ToTensor(),
                                                          transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                                               std=[0.229, 0.224, 0.225]),
@@ -180,11 +142,9 @@ class Market1501(data.Dataset):
         if self.load_img_to_cash:
             self.cash_imgs = []
             for index in range(self.len):
-                path, target, _ = self.imgs[index]
-                img = self.loader(path)
-                self.cash_imgs.append(img)
-
-
+                path, target, _, mask_p = self.imgs[index]
+                img, mask = self.loader(path, mask_p)
+                self.cash_imgs.append((img, mask))
 
         print('\n')
         print('  **************** Summary ****************')
@@ -195,7 +155,7 @@ class Market1501(data.Dataset):
 
     def _postprocess(self, imgs, least_image_per_class=4):
         image_dict = {}
-        for _, c ,i in imgs:
+        for _, c ,i,_ in imgs:
             if c not in image_dict:
                 image_dict[c] = 1
             else:
@@ -211,9 +171,9 @@ class Market1501(data.Dataset):
         new_class_to_idx = {k: i for i, k in enumerate(list(image_dict.keys()))}
 
         new_imgs = []
-        for path, c ,i in imgs:
+        for path, c ,i, mask_p in imgs:
             if c in new_class_to_idx:
-                new_imgs.append((path, new_class_to_idx[c], 0))
+                new_imgs.append((path, new_class_to_idx[c], 0, mask_p))
         classes = list(range(len(new_class_to_idx)))
         return classes, new_imgs
 
@@ -235,19 +195,22 @@ class Market1501(data.Dataset):
         Returns:
             tuple: (image, target) where target is class_index of the target class.
         """
-        path, target, _ = self.imgs[index]
+        path, target, _, mask_p = self.imgs[index]
         if not self.load_img_to_cash:
-            img = self.loader(path)
-            img = self.transform(img)
+            img, mask = self.loader(path, mask_p)
         else:
-            src = self.cash_imgs[index]
-            img = self.transform(src)
-
+            img, mask = self.cash_imgs[index]
+        if not self.require_path and random.random() < 0.5:
+            img = F.hflip(img)
+            mask = np.flip(mask, 2)
+        img = self.transform(img)
+        mask = torch.from_numpy(mask.copy())
+        mask = mask.float()
         if self.require_path:
             _, path = os.path.split(path)
-            return img, target, path
+            return img, mask, target, mask_p
 
-        return img, target
+        return img, mask, target
 
     def __len__(self):
         return len(self.imgs)
@@ -259,11 +222,11 @@ def test():
 
     train_loader = torch.utils.data.DataLoader(
         market,
-        batch_size=32, shuffle=True,
+        batch_size=4, shuffle=True,
         num_workers=4, pin_memory=True)
-    for i, (input, target) in enumerate(train_loader):
+    for i, (input, mask, target) in enumerate(train_loader):
         # print(flags.sum())
-        print(input, target)
+        print(input, mask, target)
         print('*********')
 
 

@@ -1,12 +1,7 @@
-import numpy
-import argparse
-import os
 import random
-import shutil
 import time
 import warnings
 
-import torch
 import torch.nn as nn
 import torch.nn.parallel
 import torch.backends.cudnn as cudnn
@@ -14,8 +9,6 @@ import torch.backends.cudnn as cudnn
 import torch.optim
 import torch.utils.data
 import torch.utils.data.distributed
-
-import sys
 
 import models
 import dataset
@@ -25,11 +18,10 @@ import loss
 
 from core.config import config
 from core.data_prefetcher import data_prefetcher
-from loss.loss import normalize
+from core.loss import normalize
 
 if config.get('fp16')['status']:
-    from apex import amp, optimizers
-
+    from apex import amp
 
 os.environ['CUDA_VISIBLE_DEVICES'] = ','.join([str(x) for x in config.get('gpus')])
 

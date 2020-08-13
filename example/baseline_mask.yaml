@@ -1,18 +1,15 @@
 dataset_config:
   workers: 16
-  name: FormatData #Market1501 #Occluded_Duke #Market1501 PartialOrOccluded
-  train_name : market1501
-  test_name : market1501  #Duke_pcb msmt17_pcb
+  name: MaskMarket1501 #Market1501 #Occluded_Duke #Market1501 PartialOrOccluded
   part: train
   height: 384
   width: 128
-  batch_size: 128 # 128 是fp32 2卡配置
-  load_img_to_cash: 0
+  batch_size: 64 # 128 是fp32 2卡配置
+  load_img_to_cash: 1
   least_image_per_class: 4
   use_tf_sample: 0
   use_random_pad: 0
   mgn_style_aug: false
-#  mode: val
 
 optm_config:
   name: SGD
@@ -22,14 +19,18 @@ optm_config:
   momentum: 0.9
   epochs: 80
   start_epoch: 0
-  lr: 0.05  #128 0.05
+  lr: 0.025  #128 0.05
   resume: ''
 
 model_config:
-  name: Baseline
+  name: PGFA
   num_layers: resnet50 #50, 101, 101d_32x8d
-  loss_type: ['softmax', 'triplet', 'labelsmooth']
-#  pool_type: norm
+  loss_type: ['softmax', 'triplet']
+  stripe: 6
+  coef: 0.9
+  use_pose: false
+  use_gmp: true
+#  use_non_local: true
 
 loss:
   margin: 0.5
