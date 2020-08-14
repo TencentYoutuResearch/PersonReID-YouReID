@@ -205,8 +205,9 @@ class CosineAnnealingWarmUp(_LRScheduler):
         # self.T_i = T_0
         self.T_end = T_end
         self.warmup_factor = warmup_factor
+        self.T_cur = last_epoch
         super(CosineAnnealingWarmUp, self).__init__(optimizer, last_epoch)
-        self.T_cur = self.last_epoch
+
 
     def get_lr(self):
         if self.T_cur < self.T_0:

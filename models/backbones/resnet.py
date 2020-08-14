@@ -7,7 +7,7 @@ import math
 import torch
 from torch import nn
 from torch.utils import model_zoo
-from torchvision.ops.deform_conv import deform_conv2d
+from torchvision.ops.deform_conv import DeformConv2d
 from core.layers import NonLocal
 
 model_urls = {
@@ -31,6 +31,62 @@ class Bottleneck(nn.Module):
                  use_non_local=False
                  ):
         super(Bottleneck, self).__init__()
+
+        width = int(planes * (base_width / 64.)) * groups
+        self.conv1 = nn.Conv2d(inplanes, width, kernel_size=1, bias=False)
+
+        self.bn1 = nn.BatchNorm2d(width)
+
+        self.conv2 = nn.Conv2d(width, width, kernel_size=3, stride=stride,
+                               padding=1, bias=False, groups=groups)
+        self.bn2 = nn.BatchNorm2d(width)
+        self.conv3 = nn.Conv2d(width, planes * self.expansion, kernel_size=1, bias=False)
+        self.bn3 = nn.BatchNorm2d(planes * self.expansion)
+        self.relu = nn.ReLU(inplace=True)
+        self.downsample = downsample
+        self.stride = stride
+        # GCNet
+
+        self.use_non_local = use_non_local
+        if self.use_non_local:
+            self.non_local_block = NonLocal(planes * self.expansion,
+                                       planes * self.expansion // 16)
+
+    def forward(self, x):
+        residual = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.relu(out)
+
+        out = self.conv3(out)
+        out = self.bn3(out)
+
+        if self.downsample is not None:
+            residual = self.downsample(x)
+
+        out += residual
+        out = self.relu(out)
+
+        if self.use_non_local:
+            out = self.non_local_block(out)
+
+        return out
+
+
+
+class DCNBottleneck(nn.Module):
+    expansion = 4
+
+    def __init__(self, inplanes, planes,
+                 stride=1, downsample=None, groups=1, base_width=64,
+                 use_non_local=False
+                 ):
+        super(DCNBottleneck, self).__init__()
 
         width = int(planes * (base_width / 64.)) * groups
         self.conv1 = nn.Conv2d(inplanes, width, kernel_size=1, bias=False)

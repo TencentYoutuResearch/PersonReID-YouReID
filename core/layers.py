@@ -5,8 +5,13 @@
 
 import torch
 import torch.nn.functional as F
-from torch import nn
+import math
 
+from torch import nn, Tensor
+from torch.nn import init
+from torch.nn.parameter import Parameter
+from torch.nn.modules.utils import _pair
+from torchvision.ops.deform_conv import deform_conv2d
 
 class GeneralizedMeanPooling(nn.Module):
     r"""Applies a 2D power-average adaptive pooling over an input signal composed of several input planes.
@@ -112,3 +117,71 @@ class NonLocal(nn.Module):
         z = W_y + x
 
         return z
+
+
+class DeformConv2d(nn.Module):
+    """
+    See deform_conv2d
+    """
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0,
+                 dilation=1, groups=1, bias=True):
+        super(DeformConv2d, self).__init__()
+
+        if in_channels % groups != 0:
+            raise ValueError('in_channels must be divisible by groups')
+        if out_channels % groups != 0:
+            raise ValueError('out_channels must be divisible by groups')
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = _pair(kernel_size)
+        self.stride = _pair(stride)
+        self.padding = _pair(padding)
+        self.dilation = _pair(dilation)
+        self.groups = groups
+
+        self.weight = Parameter(torch.empty(out_channels, in_channels // groups,
+                                            self.kernel_size[0], self.kernel_size[1]))
+
+        if bias:
+            self.bias = Parameter(torch.empty(out_channels))
+        else:
+            self.register_parameter('bias', None)
+
+        self.offset = Parameter(torch.empty(out_channels, in_channels // groups,
+                                            self.kernel_size[0], self.kernel_size[1]))
+        batch_size, 2 * offset_groups * kernel_height * kernel_width,
+        out_height, out_width
+
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in)
+            init.uniform_(self.bias, -bound, bound)
+
+    def forward(self, input, offset):
+        """
+        Arguments:
+            input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor
+            offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width,
+                out_height, out_width]): offsets to be applied for each position in the
+                convolution kernel.
+        """
+        return deform_conv2d(input, offset, self.weight, self.bias, stride=self.stride,
+                             padding=self.padding, dilation=self.dilation)
+
+    def __repr__(self):
+        s = self.__class__.__name__ + '('
+        s += '{in_channels}'
+        s += ', {out_channels}'
+        s += ', kernel_size={kernel_size}'
+        s += ', stride={stride}'
+        s += ', padding={padding}' if self.padding != (0, 0) else ''
+        s += ', dilation={dilation}' if self.dilation != (1, 1) else ''
+        s += ', groups={groups}' if self.groups != 1 else ''
+        s += ', bias=False' if self.bias is None else ''
+        s += ')'
+        return s.format(**self.__dict__)

@@ -1,6 +1,6 @@
 gpus: [2,3]
 #yaml: 'experiment/occluded/bmask.yaml'
-yaml: '../example/baseline_shuffle.yaml' #mgn
+yaml: '../example/baseline.yaml' #mgn
 task_id: '../../snapshot/baseline_shuffle_stage_4_num_3' #mgn_fp16
-eval: false
-use_fp16: true
+eval: true
+use_fp16: false
