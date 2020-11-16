@@ -14,8 +14,8 @@ cd train && ./cmd.sh
 
 | 模型  |Market1501 <br> mAP/rank-1|耗时| 注
 |---|---|---|---|
-｜dist/baseline_b32_2gpu｜88.44/95.69|22 M 13 s | 2gpu b32
-｜dist/baseline_b32_2gpu｜88.46/95.40|53 M 57 s | 1gpu b32
+|dist/baseline_b32_2gpu｜88.44/95.69|22 M 13 s | 2gpu b32
+|dist/baseline_b32_2gpu｜88.46/95.40|53 M 57 s | 1gpu b32
 |baseline|87.01/95.07|1 H 23 M 58 s|1gpu b128
 |baseline_fp16_b|87.27/94.39|1 H 3 M 23 s|1gpu b64
 |baseline_fp16|86.94/94.69|0 H 57 M 54 s|1gpu b128
