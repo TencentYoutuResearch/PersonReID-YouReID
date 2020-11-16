@@ -1,14 +1,21 @@
 # ReID torch 版本
+
 ## 功能
 - 单/多GPU训练
+- 分布式训练(DistributedDataParallel)
 - 训练加测试
 - fp16训练
+
+## 训练
+cd train && ./cmd.sh
 
 ## fp16性能
 以baseline为例， 显卡试16GB的Titan V
 
 | 模型  |Market1501 <br> mAP/rank-1|耗时| 注
 |---|---|---|---|
+｜dist/baseline_b32_2gpu｜88.44/95.69|22 M 13 s | 2gpu b32
+｜dist/baseline_b32_2gpu｜88.46/95.40|53 M 57 s | 1gpu b32
 |baseline|87.01/95.07|1 H 23 M 58 s|1gpu b128
 |baseline_fp16_b|87.27/94.39|1 H 3 M 23 s|1gpu b64
 |baseline_fp16|86.94/94.69|0 H 57 M 54 s|1gpu b128
@@ -32,5 +39,3 @@
 |pcb|85.47/94.54|resnet50
 |mgn|89.16/95.87|resnet50
 
-## 训练
-cd train && ./cmd.sh
