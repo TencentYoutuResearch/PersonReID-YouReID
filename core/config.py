@@ -43,5 +43,6 @@ class Config(object):
 parser = argparse.ArgumentParser(description='PyTorch Training')
 parser.add_argument('--yaml', default='../config.yaml',
                     help='yaml path')
+parser.add_argument("--local_rank", type=int, default=0)
 args = parser.parse_args()
 config = Config(args)

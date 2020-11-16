@@ -33,13 +33,15 @@ def setup_logger(name, save_dir, distributed_rank):
 
 
 class Logger(object):
-    def __init__(self, fpath=None):
+    def __init__(self, fpath=None, rank='0'):
         self.console = sys.stdout
+        print()
         self.file = None
+        self.rank = rank
         if fpath is not None:
             if not os.path.exists(fpath):
                 os.makedirs(fpath)
-            self.file = open(os.path.join(fpath, 'log.txt'), 'a+')
+            self.file = open(os.path.join(fpath, 'log_%s.txt' % rank), 'a+')
 
     def __del__(self):
         self.close()
@@ -51,9 +53,10 @@ class Logger(object):
         self.close()
 
     def write(self, msg):
-        self.console.write(msg + '\n')
+        if self.rank == '0':
+            print(msg)
         if self.file is not None:
-            self.file.write(msg + '\n')
+            print(msg, file=self.file)
         self.flush()
 
     def __call__(self, msg):

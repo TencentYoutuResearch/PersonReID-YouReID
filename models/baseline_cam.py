@@ -7,7 +7,7 @@ from .backbones import model_zoo
 from core.loss import *
 from core.layers import GeneralizedMeanPoolingP
 
-class Baseline(nn.Module):
+class BaselineCam(nn.Module):
     def __init__(self,
                  num_classes=1000,
                  num_layers=50,
@@ -18,7 +18,7 @@ class Baseline(nn.Module):
                  margin=0.5,
                  use_non_local=False
                  ):
-        super(Baseline, self).__init__()
+        super(BaselineCam, self).__init__()
         kwargs = {
             'use_non_local': use_non_local
         }
@@ -58,14 +58,12 @@ class Baseline(nn.Module):
             pass
         elif 'circle' in self.loss_type:
             self.fc_layer = Circle(num_classes, reduce_dim)
-            if 'labelsmooth' in self.loss_type:
-                self.ce_loss = CrossEntropyLabelSmooth(num_classes)
-            else:
-                self.ce_loss = nn.CrossEntropyLoss()  # .cuda()
+
         if 'triplet' in self.loss_type:
             self.tri_loss = TripletLoss(margin, normalize_feature=not 'circle' in self.loss_type) #.cuda()
-        if 'multisimilarity' in self.loss_type:
-            self.tri_loss = MultiSimilarityLoss()
+
+        self.cam_loss = CamTripletLoss(0.2, normalize_feature=True, num_class=num_classes)
+
     @staticmethod
     def _init_bn(bn):
         nn.init.constant_(bn[0].weight, 1.)
@@ -101,16 +99,17 @@ class Baseline(nn.Module):
         else:
             return [x], [x]
 
-    def compute_loss(self, output, target):
+    def compute_loss(self, output, target, cam):
         ce_logit, tri_logit = output
         if 'arcface' in self.loss_type or 'circle' in self.loss_type:
             ce_logit[0] = self.fc_layer(tri_logit[0], target)
         cls_loss = self.ce_loss(ce_logit[0], target)
-        if 'triplet' in self.loss_type or 'multisimilarity' in self.loss_type:
+        cam_loss = self.cam_loss(tri_logit[0], target, cam)
+        if 'triplet' in self.loss_type:
             tri_loss = self.tri_loss(tri_logit[0], target)
-            return [cls_loss], [tri_loss]
+            return [cls_loss], [tri_loss], [cam_loss]
         else:
-            return [cls_loss], []
+            return [cls_loss], [cam_loss]
 
 
 

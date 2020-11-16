@@ -1,9 +1,7 @@
 dataset_config:
   workers: 16
-  name: FormatData #Market1501 #Occluded_Duke #Market1501 PartialOrOccluded
-  root: /raid/home/fufuyu/dataset
-  train_name: market1501
-  test_name: market1501  #Duke_pcb msmt17_pcb
+  name: KESCI #Market1501 #Occluded_Duke #Market1501 PartialOrOccluded
+  root: /dockerdata/public/dataset/challenge
   part: train
   height: 256 #384
   width: 128
@@ -28,7 +26,8 @@ optm_config:
 model_config:
   name: Baseline
   num_layers: resnet50 #50, 101, 101d_32x8d
-  loss_type: ['softmax', 'multisimilarity', 'labelsmooth']
-  margin: 0.0
+  loss_type: ['softmax', 'triplet', 'labelsmooth']
 
+loss:
+  margin: 0.5
 

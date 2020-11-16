@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
+import torch.distributed as dist
+
 
 def normalize(x, axis=-1):
     """Normalizing to unit length along the specified dimension.
@@ -106,30 +108,6 @@ class SoftTripletLoss(nn.Module):
 
 
 
-
-
-class WeightRegularization(nn.Module):
-    def __init__(self, tolerance=1):
-        super(WeightRegularization, self).__init__()
-        self.tolerance = tolerance
-
-    def forward(self, weights):
-
-        ## type 1
-        mean = torch.stack(weights, dim=0).mean(dim=0)
-        loss = 0
-        for w in weights:
-            loss += torch.norm(w-mean).pow(2)
-        return torch.clamp(loss - self.tolerance , min=0.0)
-
-
-        # loss = 0
-        # for w in weights:
-        #     for v in weights:
-        #         if v is not w:
-        #             loss += torch.clamp(torch.norm(w - v).pow(2) - self.tolerance, min=0.0)
-        # return loss
-
 class CrossEntropyLabelSmooth(nn.Module):
     """Cross entropy loss with label smoothing regularizer.
     Reference:
@@ -158,14 +136,6 @@ class CrossEntropyLabelSmooth(nn.Module):
         targets = (1 - self.epsilon) * targets + self.epsilon / self.num_classes
         loss = (- targets * log_probs).mean(0).sum()
         return loss
-
-class Uncertainty(nn.Module):
-    def forward(self, logit):
-        probs = F.softmax(logit, dim=1)
-        log_probs = F.log_softmax(logit, dim=1)
-        loss = -(probs*log_probs).sum(1).mean(0)
-        return loss
-
 
 
 class CenterLoss(nn.Module):
@@ -314,3 +284,136 @@ class Circle(nn.Module):
         pred_class_logits = targets * s_p + (1.0 - targets) * s_n
 
         return pred_class_logits
+
+
+class CamTripletLoss(nn.Module):
+    """Triplet loss with hard positive/negative mining.
+
+    Reference:
+        Hermans et al. In Defense of the Triplet Loss for Person Re-Identification. arXiv:1703.07737.
+
+    Imported from `<https://github.com/Cysu/open-reid/blob/master/reid/loss/triplet.py>`_.
+
+    Args:
+        margin (float, optional): margin for triplet. Default is 0.3.
+    """
+
+    def __init__(self, margin=0.3, num_class=None, normalize_feature=True):
+        super(CamTripletLoss, self).__init__()
+        self.margin = margin
+        self.normalize_feature = normalize_feature
+        self.num_class = num_class
+        if margin > 0 :
+            self.ranking_loss = nn.MarginRankingLoss(margin=margin)
+        else:
+            self.ranking_loss = nn.SoftMarginLoss()
+
+    def forward(self, inputs, targets, cams):
+        """
+        Args:
+            inputs (torch.Tensor): feature matrix with shape (batch_size, feat_dim).
+            targets (torch.LongTensor): ground truth labels with shape (num_classes).
+        """
+        if self.normalize_feature:
+            inputs = normalize(inputs, axis=-1)
+        n = inputs.size(0)
+
+        # Compute pairwise distance, replace by the official when merged
+        dist = torch.pow(inputs, 2).sum(dim=1, keepdim=True).expand(n, n)
+        dist = dist + dist.t()
+        dist.addmm_(1, -2, inputs, inputs.t())
+        dist = dist.clamp(min=1e-12).sqrt()  # for numerical stability
+        # new_targets = targets + cams * self.num_class
+        # For each anchor, find the hardest positive and negative
+        mask = targets.expand(n, n).eq(targets.expand(n, n).t())
+        cam_mask = cams.expand(n, n).eq(cams.expand(n, n).t())
+        dist_ap, dist_an = [], []
+        for i in range(n):
+            mask_ap = cam_mask[i] & (mask[i] == 0)
+            mask_an = (cam_mask[i] == 0) & (mask[i] == 0)
+            if dist[i][mask_ap].size(0) > 0:
+                ap = dist[i][mask_ap].min().unsqueeze(0)
+                # print('ap', ap.size())
+            else:
+                ap = torch.tensor([self.margin + 1], device=mask.device)
+            if dist[i][mask_an].size(0) > 0:
+                an = dist[i][mask_an].min().unsqueeze(0)
+                # print('an', an.size())
+            else:
+                an = torch.tensor([0.], device=mask.device)
+            dist_ap.append(ap)
+            dist_an.append(an)
+        dist_ap = torch.cat(dist_ap)
+        dist_an = torch.cat(dist_an)
+
+        # Compute ranking hinge loss
+        y = torch.ones_like(dist_an)
+        if self.margin > 0:
+            return self.ranking_loss(dist_ap, dist_an, y)
+        else:
+            return self.ranking_loss(dist_ap - dist_an, y)
+
+
+def distributed_sinkhorn(Q, nmb_iters):
+    with torch.no_grad():
+        sum_Q = torch.sum(Q)
+        # dist.all_reduce(sum_Q)
+        Q /= sum_Q
+        r = torch.ones(Q.shape[0]).cuda(non_blocking=True) / Q.shape[0]
+        c = torch.ones(Q.shape[1]).cuda(non_blocking=True) / (2 * Q.shape[1])
+
+        curr_sum = torch.sum(Q, dim=1)
+        # dist.all_reduce(curr_sum)
+
+        for it in range(nmb_iters):
+            u = curr_sum
+            Q *= (r / u).unsqueeze(1)
+            Q *= (c / torch.sum(Q, dim=0)).unsqueeze(0)
+            curr_sum = torch.sum(Q, dim=1)
+            # dist.all_reduce(curr_sum)
+        return (Q / torch.sum(Q, dim=0, keepdim=True)).t().float()
+
+
+class MultiSimilarityLoss(nn.Module):
+    def __init__(self):
+        super(MultiSimilarityLoss, self).__init__()
+        self.thresh = 0.5 # 0.5
+        self.margin = 0.1
+
+        self.scale_pos = 2. #default 2
+        self.scale_neg = 40. # default 40
+        print(self.scale_pos, self.scale_neg)
+
+    def forward(self, feats, labels):
+        feats = normalize(feats, axis=-1)
+        assert feats.size(0) == labels.size(0), \
+            f"feats.size(0): {feats.size(0)} is not equal to labels.size(0): {labels.size(0)}"
+        batch_size = feats.size(0)
+        sim_mat = torch.matmul(feats, torch.t(feats))
+
+        epsilon = 1e-5
+        loss = list()
+
+        for i in range(batch_size):
+            pos_pair_ = sim_mat[i][labels == labels[i]]
+            pos_pair_ = pos_pair_[pos_pair_ < 1 - epsilon]
+            neg_pair_ = sim_mat[i][labels != labels[i]]
+            # print(max(pos_pair_),min(pos_pair_), max(neg_pair_), min(neg_pair_))
+            neg_pair = neg_pair_[neg_pair_ + self.margin > min(pos_pair_)]
+            pos_pair = pos_pair_[pos_pair_ - self.margin < max(neg_pair_)]
+
+            if len(neg_pair) < 1 or len(pos_pair) < 1:
+                continue
+
+            # weighting step
+            pos_loss = 1.0 / self.scale_pos * torch.log(
+                1 + torch.sum(torch.exp(-self.scale_pos * (pos_pair - self.thresh))))
+            neg_loss = 1.0 / self.scale_neg * torch.log(
+                1 + torch.sum(torch.exp(self.scale_neg * (neg_pair - self.thresh))))
+            loss.append(pos_loss + neg_loss)
+
+        if len(loss) == 0:
+            return torch.zeros([], requires_grad=True)
+
+        loss = sum(loss) / batch_size
+        return loss

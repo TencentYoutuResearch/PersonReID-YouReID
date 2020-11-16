@@ -2,17 +2,18 @@ dataset_config:
   workers: 16
   name: FormatData #Market1501 #Occluded_Duke #Market1501 PartialOrOccluded
   root: /raid/home/fufuyu/dataset
-  train_name: market1501
-  test_name: market1501  #Duke_pcb msmt17_pcb
+  train_name : market1501
+  test_name : market1501  #Duke_pcb msmt17_pcb
   part: train
   height: 256 #384
   width: 128
-  batch_size: 128 # 128 是fp32 2卡配置
+  batch_size: 64 # 128 是fp32 2卡配置
   load_img_to_cash: 0
   least_image_per_class: 4
   use_tf_sample: 0
   use_random_pad: 0
   mgn_style_aug: false
+#  mode: val
 
 optm_config:
   name: SGD
@@ -28,7 +29,10 @@ optm_config:
 model_config:
   name: Baseline
   num_layers: resnet50 #50, 101, 101d_32x8d
-  loss_type: ['softmax', 'multisimilarity', 'labelsmooth']
-  margin: 0.0
+  loss_type: ['softmax', 'triplet', 'labelsmooth']
+  margin: 0.5
+#  pool_type: norm
+
+loss:
 
 

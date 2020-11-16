@@ -7,18 +7,18 @@ from .backbones import model_zoo
 from core.loss import *
 from core.layers import GeneralizedMeanPoolingP
 
-class Baseline(nn.Module):
+class SWAV(nn.Module):
     def __init__(self,
                  num_classes=1000,
                  num_layers=50,
                  last_stride=1,
                  reduce_dim=768,
                  pool_type='baseline',
-                 loss_type=['softmax, triplet'],
-                 margin=0.5,
+                 epsilon=0.05,
+                 temperature=0.1,
                  use_non_local=False
                  ):
-        super(Baseline, self).__init__()
+        super(SWAV, self).__init__()
         kwargs = {
             'use_non_local': use_non_local
         }
@@ -46,36 +46,14 @@ class Baseline(nn.Module):
         self.bn = nn.Sequential(nn.BatchNorm2d(reduce_dim))
         self._init_bn(self.bn)
 
-        self.loss_type = loss_type
-        if 'softmax' in self.loss_type:
-            self.fc_layer = nn.Sequential(nn.Dropout(), nn.Linear(reduce_dim, num_classes))
-            self._init_fc(self.fc_layer)
-            if 'labelsmooth' in self.loss_type:
-                self.ce_loss = CrossEntropyLabelSmooth(num_classes)
-            else:
-                self.ce_loss = nn.CrossEntropyLoss()  # .cuda()
-        elif 'arcface' in self.loss_type:
-            pass
-        elif 'circle' in self.loss_type:
-            self.fc_layer = Circle(num_classes, reduce_dim)
-            if 'labelsmooth' in self.loss_type:
-                self.ce_loss = CrossEntropyLabelSmooth(num_classes)
-            else:
-                self.ce_loss = nn.CrossEntropyLoss()  # .cuda()
-        if 'triplet' in self.loss_type:
-            self.tri_loss = TripletLoss(margin, normalize_feature=not 'circle' in self.loss_type) #.cuda()
-        if 'multisimilarity' in self.loss_type:
-            self.tri_loss = MultiSimilarityLoss()
+        self.fc = nn.Linear(reduce_dim, num_classes)
+        self.epsilon = epsilon
+        self.temperature = temperature
+
     @staticmethod
     def _init_bn(bn):
         nn.init.constant_(bn[0].weight, 1.)
         nn.init.constant_(bn[0].bias, 0.)
-
-    @staticmethod
-    def _init_fc(fc):
-        # nn.init.kaiming_normal_(fc.weight, mode='fan_out')
-        nn.init.normal_(fc[1].weight, std=0.001)
-        nn.init.constant_(fc[1].bias, 0.)
 
     def forward(self, x):
         x = self.resnet(x)
@@ -95,22 +73,26 @@ class Baseline(nn.Module):
 
         x = self.embedding_layer(x)
         x = self.bn(x).squeeze(dim=3).squeeze(dim=2)
-        if 'softmax' in self.loss_type:
-            y = self.fc_layer(x)
-            return [y], [x]
-        else:
-            return [x], [x]
+        y = self.fc(x)
+        return y, x
 
-    def compute_loss(self, output, target):
-        ce_logit, tri_logit = output
-        if 'arcface' in self.loss_type or 'circle' in self.loss_type:
-            ce_logit[0] = self.fc_layer(tri_logit[0], target)
-        cls_loss = self.ce_loss(ce_logit[0], target)
-        if 'triplet' in self.loss_type or 'multisimilarity' in self.loss_type:
-            tri_loss = self.tri_loss(tri_logit[0], target)
-            return [cls_loss], [tri_loss]
-        else:
-            return [cls_loss], []
+    def compute_loss(self, output):
+        ce_logits, tri_logits = output
+        ce_logits = torch.split(ce_logits, split_size_or_sections=2)
+        # tri_logits = torch.split(tri_logits, split_size_or_sections=2)
+        # target = torch.split(targetet, split_size_or_sections=2)
+        bs = ce_logits[0].size(0)
+        loss = 0
+        for i in range(2):
+            with torch.no_grad():
+                out = ce_logits[i]
+                q = torch.exp(out / self.epsilon).t()
+                q = distributed_sinkhorn(q, 3)[-bs:]
+            p = torch.softmax(ce_logits[1-i] / self.temperature, dim=-1)
+            loss -= torch.mean(torch.sum(q * torch.log(p), dim=1))
+        loss /= 2.
+
+        return [loss],  []
 
 
 

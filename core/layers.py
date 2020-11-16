@@ -185,3 +185,109 @@ class DeformConv2d(nn.Module):
         s += ', bias=False' if self.bias is None else ''
         s += ')'
         return s.format(**self.__dict__)
+
+
+class DSBN2d(nn.Module):
+    def __init__(self, planes):
+        super(DSBN2d, self).__init__()
+        self.num_features = planes
+        self.BN_S = nn.BatchNorm2d(planes)
+        self.BN_T = nn.BatchNorm2d(planes)
+
+    def forward(self, x):
+        if (not self.training):
+            return self.BN_S(x)
+
+        bs = x.size(0)
+        assert (bs%2==0)
+        split = torch.split(x, int(bs/2), 0)
+        out1 = self.BN_S(split[0].contiguous())
+        out2 = self.BN_T(split[1].contiguous())
+        out = torch.cat((out1, out2), 0)
+        return out
+
+class DSBN2dConstBatch(nn.Module):
+    def __init__(self, planes, batch_size=64, constant_batch=32):
+        super(DSBN2dConstBatch, self).__init__()
+        self.num_features = planes
+        self.constant_batch = constant_batch
+        self.bn_list = nn.Sequential(*[nn.BatchNorm2d(planes) for _ in range(batch_size // constant_batch)])
+    def forward(self, x):
+        if (not self.training):
+            return self.bn_list[0](x)
+
+        bs = x.size(0)
+        # print('befor', bs, x.size(), self.constant_batch)
+        assert (bs % self.constant_batch==0)
+        split = torch.split(x, self.constant_batch, 0)
+        out_list = [self.bn_list[i](split[i].contiguous()) for i in range(bs // self.constant_batch)]
+        out = torch.cat(out_list, 0)
+        # print('after', bs, out.size(), self.constant_batch, len(out_list), out_list[0].size())
+        return out
+
+
+def convert_dsbn(model):
+    for _, (child_name, child) in enumerate(model.named_children()):
+        # print(next(model.parameters()))
+        # assert(not next(model.parameters()).is_cuda)
+        if isinstance(child, nn.BatchNorm2d):
+            m = DSBN2d(child.num_features)
+            m.BN_S.load_state_dict(child.state_dict())
+            m.BN_T.load_state_dict(child.state_dict())
+            setattr(model, child_name, m)
+        else:
+            convert_dsbn(child)
+
+def convert_dsbnConstBatch(model, batch_size=64, constant_batch=32):
+    for _, (child_name, child) in enumerate(model.named_children()):
+        # print(next(model.parameters()))
+        # assert(not next(model.parameters()).is_cuda)
+        if isinstance(child, nn.BatchNorm2d):
+            m = DSBN2dConstBatch(child.num_features, batch_size=batch_size, constant_batch=constant_batch)
+            for bn in m.bn_list:
+                bn.load_state_dict(child.state_dict())
+            setattr(model, child_name, m)
+        else:
+            convert_dsbnConstBatch(child, batch_size=batch_size, constant_batch=constant_batch)
+
+
+class Conv2d(nn.Conv2d):
+
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1,
+                 padding=0, dilation=1, groups=1, bias=True):
+        super(Conv2d, self).__init__(in_channels, out_channels, kernel_size, stride,
+                 padding, dilation, groups, bias)
+
+    def forward(self, x):
+        weight = self.weight
+        weight_mean = weight.mean(dim=1, keepdim=True).mean(dim=2,
+                                  keepdim=True).mean(dim=3, keepdim=True)
+        weight = weight - weight_mean
+        std = torch.pow(weight.view(weight.size(0), -1).var(dim=1) + 1e-5, 0.5).view(-1, 1, 1, 1)
+        weight = weight / std.expand_as(weight)
+        return F.conv2d(x, weight, self.bias, self.stride,
+                        self.padding, self.dilation, self.groups)
+
+def BatchNorm2d(num_features):
+    num_groups = 32
+    return GN(num_channels=num_features, num_groups=num_groups)
+
+
+class GN(nn.Module):
+
+    def __init__(self, num_channels, num_groups):
+        super(GN, self).__init__()
+        self.num_channels = num_channels
+        self.num_groups = num_groups
+        self.weight = Parameter(torch.ones(1, num_groups, 1))
+        self.bias = Parameter(torch.zeros(1, num_groups, 1))
+        self.pbn = nn.BatchNorm2d(num_channels)
+
+    def forward(self, inp):
+        out = self.pbn(inp)
+        out = out.view(1, inp.size(0) * self.num_groups, -1)
+        out = torch.batch_norm(out, None, None, None, None, True, 0, 1e-5, True)
+        out = out.view(inp.size(0), self.num_groups, -1)
+        out = self.weight * out + self.bias
+        out = out.view_as(inp)
+        return out

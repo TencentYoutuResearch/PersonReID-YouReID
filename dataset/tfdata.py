@@ -15,7 +15,8 @@ import scipy.io as sio
 import sys
 sys.path.append("..")
 from utils.iotools import read_image, is_image_file
-
+from PIL import Image
+import io
 import numpy as np
 from copy import deepcopy
 import pickle
@@ -85,6 +86,9 @@ def make_query(root, config):
 
     return images
 
+def read_image_from_buffer(buffer):
+    return Image.open(io.BytesIO(buffer)).convert('RGB')
+
 class FormatData(data.Dataset):
     def __init__(self, root='/data1/home/fufuyu/dataset/',
                  dataname='market1501', part='train',
@@ -106,20 +110,14 @@ class FormatData(data.Dataset):
             partitions = pickle.load(f)
 
         if part == 'train':
-            im_names = partitions['trainval_im_names']
-            ids2labels = partitions['trainval_ids2labels']
-
-            trainval_ids2labels = {}
-            current_label = 0
-            for id in ids2labels:
-                trainval_ids2labels[id] = current_label
-                current_label += 1
+            self.loader = read_image_from_buffer
+            with open(os.path.join(root, 'TFR-%s/TFR-%s.txt' % (dataname, dataname))) as rf:
+                lines = rf.read().splitlines()
 
             imgs = []
-            for line_i, im_name in enumerate(im_names):
-                id, cam = self.parse_im_name(im_name)
-                label = trainval_ids2labels[id]
-                imgs.append((os.path.join(self.root, 'images', im_name), label, cam))
+            for line_i, im_name in enumerate(lines):
+                record, record_id, offset, label = im_name.split()
+                imgs.append(('%s_%s_%s' % (record, record_id, offset), int(label), 0))
 
             classes, imgs = self._postprocess(imgs, self.least_image_per_class)
         else:
@@ -184,9 +182,6 @@ class FormatData(data.Dataset):
 
 
         self.imgs = imgs
-        if self.load_img_to_cash:
-            mean, std = self.get_mean_and_std()
-            print(mean, std)
         self.classes = classes
         self.len = len(imgs)
         self.class_num = len(classes)
@@ -231,9 +226,6 @@ class FormatData(data.Dataset):
         return classes, new_imgs
 
 
-    def parse_im_name(self, im_name):
-        """Get the person id or cam from an image name."""
-        return int(im_name[:8]), int(im_name[9:13])
 
     def __getitem__(self, index):
         """
@@ -263,33 +255,3 @@ class FormatData(data.Dataset):
     def __len__(self):
         return len(self.imgs)
 
-
-    def get_mean_and_std(self):
-        '''Compute the mean and std value of dataset.'''
-        mean, std = np.array([0, 0, 0]), np.array([0, 0, 0])
-        for path, target, _ in self.imgs:
-            img = self.loader(path)
-            img = np.asarray(img)
-            for i in range(3):
-                mean[i] += img[:,:, i].mean()
-                std[i] += img[:,:,i].std()
-
-        mean = mean / len(self.imgs) / 255.0
-        std = std / len(self.imgs) / 255.0
-        return mean, std
-
-# def test():
-#     market = Market1501(part='train')
-#
-#     train_loader = torch.utils.data.DataLoader(
-#         market,
-#         batch_size=32, shuffle=True,
-#         num_workers=4, pin_memory=True)
-#     for i, (input, target) in enumerate(train_loader):
-#         # print(flags.sum())
-#         print(input, target)
-#         print('*********')
-
-
-if __name__ == '__main__':
-    test()

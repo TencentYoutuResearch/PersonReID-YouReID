@@ -19,7 +19,7 @@ from utils.iotools import read_image, is_image_file
 import numpy as np
 from copy import deepcopy
 import pickle
-import glob
+import math
 
 def find_classes(config):
     with open(config, 'r') as f:
@@ -85,7 +85,7 @@ def make_query(root, config):
 
     return images
 
-class FormatData(data.Dataset):
+class Pair(data.IterableDataset):
     def __init__(self, root='/data1/home/fufuyu/dataset/',
                  dataname='market1501', part='train',
                  loader=read_image, require_path=False, size=(384,128),
@@ -101,6 +101,7 @@ class FormatData(data.Dataset):
         self.logger = kwargs.get('logger', print)
         self.mode = kwargs.get('mode', 'train')
         self.return_cam = kwargs.get('return_cam', False)
+        self.epoch = kwargs.get('epoch', 0)
 
         with open(os.path.join(self.root, 'partitions.pkl'), 'rb') as f:
             partitions = pickle.load(f)
@@ -118,10 +119,12 @@ class FormatData(data.Dataset):
             imgs = []
             for line_i, im_name in enumerate(im_names):
                 id, cam = self.parse_im_name(im_name)
-                label = trainval_ids2labels[id]
-                imgs.append((os.path.join(self.root, 'images', im_name), label, cam))
+                label = int(trainval_ids2labels[id])
+                imgs.append((os.path.join(self.root, 'images', im_name), label * 10 + cam, cam))
 
-            classes, imgs = self._postprocess(imgs, self.least_image_per_class)
+            self.image_dict = self._postprocess(imgs, self.least_image_per_class)
+            classes = self.image_dict.keys()
+            self.len = sum([math.ceil(float(len(v)) / self.least_image_per_class) * self.least_image_per_class for v in self.image_dict.values()])
         else:
             if len(partitions['test_im_names']) > 0:
                 img_list = partitions['test_im_names']
@@ -142,8 +145,10 @@ class FormatData(data.Dataset):
             else:
                 imgs = g_list
 
-        if len(imgs) == 0:
-            raise (RuntimeError("Found 0 images in subfolders of: " + self.root + "\n"))
+            if len(imgs) == 0:
+                raise (RuntimeError("Found 0 images in subfolders of: " + self.root + "\n"))
+            self.imgs = imgs
+            self.len = len(imgs)
 
         if default_transforms is None:
             self.transform = transforms.Compose([
@@ -165,7 +170,6 @@ class FormatData(data.Dataset):
                                              std=[0.229, 0.224, 0.225]),
                     ])
                 else:
-                    # crop_image_paths = glob.glob('/data1/home/fufuyu/dataset/msmt17_pcb/images/*.jpg')
                     self.transform = transforms.Compose([
                                                          transforms.RandomHorizontalFlip(),
                                                          transforms.Resize(size),
@@ -178,25 +182,16 @@ class FormatData(data.Dataset):
                                                                               std=[0.229, 0.224, 0.225]),
                                                          my_transforms.RandomErasing(mean=[0.485, 0.456, 0.406]
                                                                                       ),
+
                                                          ])
         else:
             self.transform = default_transforms
 
 
-        self.imgs = imgs
-        if self.load_img_to_cash:
-            mean, std = self.get_mean_and_std()
-            print(mean, std)
-        self.classes = classes
-        self.len = len(imgs)
-        self.class_num = len(classes)
 
-        if self.load_img_to_cash:
-            self.cash_imgs = []
-            for index in range(self.len):
-                path, target, _ = self.imgs[index]
-                img = self.loader(path)
-                self.cash_imgs.append(img)
+        self.classes = classes
+
+        self.class_num = len(classes)
 
         self.logger('\n')
         self.logger('  **************** Summary ****************')
@@ -207,89 +202,85 @@ class FormatData(data.Dataset):
 
     def _postprocess(self, imgs, least_image_per_class=4):
         image_dict = {}
-        for _, c ,_ in imgs:
+        for p, c ,_ in imgs:
             if c not in image_dict:
-                image_dict[c] = 1
+                image_dict[c] = [p]
             else:
-                image_dict[c] += 1
+                image_dict[c].append(p)
 
         temp = deepcopy(image_dict)
 
         for k,v in temp.items():
-            if v < least_image_per_class:
+            if len(v) < least_image_per_class:
                 image_dict.pop(k)
 
-        new_class_to_idx = {k: i for i, k in enumerate(list(image_dict.keys()))}
+        new_image_dict = {i: image_dict[k] for i, k in enumerate(list(image_dict.keys()))}
 
-        new_imgs = []
-        for path, c ,i in imgs:
-            if c in new_class_to_idx:
-                new_imgs.append((path, new_class_to_idx[c], i))
-
-        classes = list(range(len(new_class_to_idx)))
-
-        return classes, new_imgs
+        return new_image_dict
 
 
     def parse_im_name(self, im_name):
         """Get the person id or cam from an image name."""
         return int(im_name[:8]), int(im_name[9:13])
 
-    def __getitem__(self, index):
-        """
-        Args:
-            index (int): Index
+    def __iter__(self):
 
-        Returns:
-            tuple: (image, target) where target is class_index of the target class.
-        """
-        path, target, cam = self.imgs[index]
-        if not self.load_img_to_cash:
-            img = self.loader(path)
-            img = self.transform(img)
-        else:
-            src = self.cash_imgs[index]
-            img = self.transform(src)
+        worker_info = data.get_worker_info()
+        # world_size = intintos.environ['WORLD_SIZE'])
+        # rank = int(os.environ['RANK'])
+        num_worker = worker_info.num_workers
+        worker_id = worker_info.id
+        np.random.seed(self.epoch)
 
-        if self.require_path:
-            _, path = os.path.split(path)
-            return img, target, path
+        pairs = []
+        for k, v in self.image_dict.items():
+            if len(v) % self.least_image_per_class != 0:
+                new_v = v + np.random.choice(v, self.least_image_per_class - len(v) % self.least_image_per_class).tolist()
+            else:
+                new_v = v
+            np.random.shuffle(new_v)
+            left = new_v[::2]
+            right = new_v[1::2]
+            pairs.extend(list(zip(left, right)))
+        for p1, p2 in pairs[worker_id::num_worker]:
+            img1 = self.loader(p1)
+            img1 = self.transform(img1)
+            img2 = self.loader(p2)
+            img2 = self.transform(img2)
+            yield img1, img2
 
-        if self.return_cam:
-            return img, target, cam
-        else:
-            return img, target
+
+
+    # def __getitem__(self, index):
+    #     """
+    #     Args:
+    #         index (int): Index
+    #
+    #     Returns:
+    #         tuple: (image, target) where target is class_index of the target class.
+    #     """
+    #     if self.return_cam:
+    #         path, target, cam = self.imgs[index]
+    #     else:
+    #         path, target = self.imgs[index]
+    #     if not self.load_img_to_cash:
+    #         img = self.loader(path)
+    #         img = self.transform(img)
+    #     else:
+    #         src = self.cash_imgs[index]
+    #         img = self.transform(src)
+    #
+    #     if self.require_path:
+    #         _, path = os.path.split(path)
+    #         return img, target, path
+    #
+    #     if self.return_cam:
+    #         return img, target, cam
+    #     else:
+    #         return img, target
 
     def __len__(self):
-        return len(self.imgs)
+        return self.len
 
 
-    def get_mean_and_std(self):
-        '''Compute the mean and std value of dataset.'''
-        mean, std = np.array([0, 0, 0]), np.array([0, 0, 0])
-        for path, target, _ in self.imgs:
-            img = self.loader(path)
-            img = np.asarray(img)
-            for i in range(3):
-                mean[i] += img[:,:, i].mean()
-                std[i] += img[:,:,i].std()
 
-        mean = mean / len(self.imgs) / 255.0
-        std = std / len(self.imgs) / 255.0
-        return mean, std
-
-# def test():
-#     market = Market1501(part='train')
-#
-#     train_loader = torch.utils.data.DataLoader(
-#         market,
-#         batch_size=32, shuffle=True,
-#         num_workers=4, pin_memory=True)
-#     for i, (input, target) in enumerate(train_loader):
-#         # print(flags.sum())
-#         print(input, target)
-#         print('*********')
-
-
-if __name__ == '__main__':
-    test()

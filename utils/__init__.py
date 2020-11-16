@@ -9,7 +9,7 @@ import re
 import errno
 from PIL import Image
 # from .default_parser import init_parser
-from .sampler import RandomIdentitySampler, RandomCameraSampler
+from .sampler import RandomIdentitySampler, RandomCameraSampler, DistributeRandomIdentitySampler
 import numpy
 from .re_ranking import re_ranking
 
