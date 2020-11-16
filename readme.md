@@ -32,3 +32,5 @@
 |pcb|85.47/94.54|resnet50
 |mgn|89.16/95.87|resnet50
 
+## 训练
+cd train && ./cmd.sh
