@@ -17,7 +17,7 @@ import evaluate
 
 from core.config import config
 from core.loss import normalize
-
+from core.layers import convert_dsbn, convert_dsbnConstBatch
 
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = ','.join([str(x) for x in config.get('gpus')])
@@ -33,7 +33,7 @@ def bulid_dataset():
     #     params = {}
     # else:
     #     params = {'mgn_style_aug': cfg['mgn_style_aug']}
-    data = dataset.__dict__[cfg['name']](root=cfg['root'], dataname=cfg['train_name'], part='train',
+    data = dataset.__dict__[cfg['train_class']](root=cfg['root'], dataname=cfg['train_name'], part='train',
                                          size=(cfg['height'], cfg['width']),
                                          least_image_per_class=cfg['least_image_per_class'],
                                          load_img_to_cash= cfg['load_img_to_cash'],
@@ -51,14 +51,14 @@ def bulid_dataset():
     test_loader = {
         'query':
             torch.utils.data.DataLoader(
-                dataset.__dict__[cfg['name']](root=cfg['root'], dataname=cfg['test_name'], part='query',
+                dataset.__dict__[cfg['test_class']](root=cfg['root'], dataname=cfg['test_name'], part='query',
                                             require_path=True, size=(cfg['height'], cfg['width']),
                                               **params
                                             ),
                 batch_size=cfg['batch_size'], shuffle=False, num_workers=cfg['workers'], pin_memory=True),
         'gallery':
             torch.utils.data.DataLoader(
-                dataset.__dict__[cfg['name']](root=cfg['root'], dataname=cfg['test_name'],
+                dataset.__dict__[cfg['test_class']](root=cfg['root'], dataname=cfg['test_name'],
                                               part='gallery', require_path=True,
                                               size=(cfg['height'], cfg['width']),
                                               **params
@@ -85,7 +85,15 @@ def main():
     model_name = mconfig['name']
     del mconfig['name']
     net = models.__dict__[model_name]
+    if 'split_bn' in mconfig:
+        split_bn = mconfig['split_bn']
+        del mconfig['split_bn']
+    else:
+        split_bn = None
     model = net(num_classes=train_loader.dataset.class_num, **mconfig)
+    if split_bn:
+        # convert_dsbn(model)
+        convert_dsbnConstBatch(model, batch_size=config.get('dataset_config')['batch_size'], constant_batch=32)
     model = torch.nn.DataParallel(model).cuda()
     mcfg = config.get('model_config')
 

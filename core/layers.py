@@ -225,6 +225,22 @@ class DSBN2dConstBatch(nn.Module):
         # print('after', bs, out.size(), self.constant_batch, len(out_list), out_list[0].size())
         return out
 
+class DSBN2dShare(nn.Module):
+    def __init__(self, planes, constant_batch=32):
+        super(DSBN2dShare, self).__init__()
+        self.num_features = planes
+        self.constant_batch = constant_batch
+        self.bn = nn.BatchNorm2d(planes)
+    def forward(self, x):
+        if (not self.training):
+            return self.bn(x)
+
+        bs = x.size(0)
+        assert (bs % self.constant_batch==0)
+        split = torch.split(x, self.constant_batch, 0)
+        out_list = [self.bn(split[i].contiguous()) for i in range(bs // self.constant_batch)]
+        out = torch.cat(out_list, 0)
+        return out
 
 def convert_dsbn(model):
     for _, (child_name, child) in enumerate(model.named_children()):
@@ -237,6 +253,17 @@ def convert_dsbn(model):
             setattr(model, child_name, m)
         else:
             convert_dsbn(child)
+
+def convert_dsbnShare(model, constant_batch=32):
+    for _, (child_name, child) in enumerate(model.named_children()):
+        # print(next(model.parameters()))
+        # assert(not next(model.parameters()).is_cuda)
+        if isinstance(child, nn.BatchNorm2d):
+            m = DSBN2dShare(child.num_features, constant_batch=32)
+            m.bn.load_state_dict(child.state_dict())
+            setattr(model, child_name, m)
+        else:
+            convert_dsbnShare(child)
 
 def convert_dsbnConstBatch(model, batch_size=64, constant_batch=32):
     for _, (child_name, child) in enumerate(model.named_children()):

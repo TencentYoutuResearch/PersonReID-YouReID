@@ -1,6 +1,6 @@
-gpus: [2,3]
+gpus: [0,1]
 #yaml: 'experiment/occluded/bmask.yaml'
-yaml: '../example/distribute/baseline_dist_bn.yaml' #mgn
-task_id: '../../snapshot/distribute/baseline_b96_dist_bn_6x16' #mgn_fp16
+yaml: '../example/distribute/baseline_dist_bn_multidataset.yaml' #mgn
+task_id: '../../snapshot/distribute/baseline_b128_duke_share_bn' #mgn_fp16
 eval: false
-use_fp16: true
+use_fp16: false

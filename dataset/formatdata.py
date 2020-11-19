@@ -89,7 +89,7 @@ class FormatData(data.Dataset):
     def __init__(self, root='/data1/home/fufuyu/dataset/',
                  dataname='market1501', part='train',
                  loader=read_image, require_path=False, size=(384,128),
-                 least_image_per_class=4, mgn_style_aug=False,
+                 least_image_per_class=4, mgn_style_aug=False, label_offset=0,
                  load_img_to_cash=False, default_transforms=None, **kwargs):
 
         self.root = os.path.join(root, dataname)
@@ -98,6 +98,7 @@ class FormatData(data.Dataset):
         self.require_path = require_path
         self.least_image_per_class = least_image_per_class
         self.load_img_to_cash = load_img_to_cash
+        self.label_offset = label_offset
         self.logger = kwargs.get('logger', print)
         self.mode = kwargs.get('mode', 'train')
         self.return_cam = kwargs.get('return_cam', False)
@@ -200,6 +201,7 @@ class FormatData(data.Dataset):
 
         self.logger('\n')
         self.logger('  **************** Summary ****************')
+        self.logger('  #  name : {}   part: {}'.format(dataname, self.part))
         self.logger('  #  ids      : {}'.format(self.class_num))
         self.logger('  #  images   : {}'.format(len(imgs)))
         self.logger('  *****************************************')
@@ -224,7 +226,7 @@ class FormatData(data.Dataset):
         new_imgs = []
         for path, c ,i in imgs:
             if c in new_class_to_idx:
-                new_imgs.append((path, new_class_to_idx[c], i))
+                new_imgs.append((path, new_class_to_idx[c] + self.label_offset, i))
 
         classes = list(range(len(new_class_to_idx)))
 
@@ -278,18 +280,51 @@ class FormatData(data.Dataset):
         std = std / len(self.imgs) / 255.0
         return mean, std
 
-# def test():
-#     market = Market1501(part='train')
-#
-#     train_loader = torch.utils.data.DataLoader(
-#         market,
-#         batch_size=32, shuffle=True,
-#         num_workers=4, pin_memory=True)
-#     for i, (input, target) in enumerate(train_loader):
-#         # print(flags.sum())
-#         print(input, target)
-#         print('*********')
 
+class FormatDatas(data.Dataset):
+    def __init__(self, root='/data1/home/fufuyu/dataset/',
+                 dataname=['market1501'], part='train',
+                 loader=read_image, require_path=False, size=(384,128),
+                 least_image_per_class=4, mgn_style_aug=False,
+                 load_img_to_cash=False, default_transforms=None, **kwargs):
+        self.logger = kwargs.get('logger', print)
+        self.imgs = []
+        self.classes = []
+        self.lens = []
+        self.datasets = []
+        label_offset = 0
+        for d in dataname:
+            dataset = FormatData(root, dataname=d, part=part, loader=loader, require_path=require_path,
+                                 size=size, least_image_per_class=least_image_per_class,
+                                 mgn_style_aug=mgn_style_aug, label_offset=label_offset,
+                                 load_img_to_cash=load_img_to_cash, default_transforms=default_transforms, **kwargs
+                                 )
+            self.datasets.append(dataset)
+            class_num = dataset.class_num
+            imgs = dataset.imgs
+            label_offset += class_num
+            self.imgs.extend(imgs)
+            self.lens.append(len(imgs))
+
+        self.class_num = label_offset
+        self.len = sum(self.lens)
+        self.logger('\n')
+        self.logger('  **************** Summary ****************')
+        self.logger('  #  ids      : {}'.format(label_offset))
+        self.logger('  #  images   : {}'.format(sum(self.lens)))
+        self.logger('  *****************************************')
+        self.logger('\n')
+
+    def __getitem__(self, index):
+        dataset_ind = 0
+        for i in range(len(self.datasets)):
+            if index < sum(self.lens[:i+1]):
+                dataset_ind = i
+                break
+        if dataset_ind == 0:
+            return self.datasets[dataset_ind].__getitem__(index=index)
+        else:
+            return self.datasets[dataset_ind].__getitem__(index=index - sum(self.lens[:dataset_ind]))
 
 if __name__ == '__main__':
     test()

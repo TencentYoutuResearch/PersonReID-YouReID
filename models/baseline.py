@@ -55,7 +55,11 @@ class Baseline(nn.Module):
             else:
                 self.ce_loss = nn.CrossEntropyLoss()  # .cuda()
         elif 'arcface' in self.loss_type:
-            pass
+            self.fc_layer = ArcMarginProduct(reduce_dim, num_classes)
+            if 'labelsmooth' in self.loss_type:
+                self.ce_loss = CrossEntropyLabelSmooth(num_classes)
+            else:
+                self.ce_loss = nn.CrossEntropyLoss()  # .cuda()
         elif 'circle' in self.loss_type:
             self.fc_layer = Circle(num_classes, reduce_dim)
             if 'labelsmooth' in self.loss_type:
@@ -77,7 +81,7 @@ class Baseline(nn.Module):
         nn.init.normal_(fc[1].weight, std=0.001)
         nn.init.constant_(fc[1].bias, 0.)
 
-    def forward(self, x):
+    def forward(self, x, label=None):
         x = self.resnet(x)
         # print(x.shape)
         if self.pool_type == 'baseline':
@@ -95,22 +99,26 @@ class Baseline(nn.Module):
 
         x = self.embedding_layer(x)
         x = self.bn(x).squeeze(dim=3).squeeze(dim=2)
-        if 'softmax' in self.loss_type:
-            y = self.fc_layer(x)
-            return [y], [x]
+        if self.training:
+            if 'softmax' in self.loss_type:
+                y = self.fc_layer(x)
+                return [y], [x]
+            elif 'arcface' in self.loss_type or 'circle' in self.loss_type:
+                y = self.fc_layer(x, label)
+                return [y], [x]
         else:
             return [x], [x]
 
     def compute_loss(self, output, target):
         ce_logit, tri_logit = output
-        if 'arcface' in self.loss_type or 'circle' in self.loss_type:
-            ce_logit[0] = self.fc_layer(tri_logit[0], target)
-        cls_loss = self.ce_loss(ce_logit[0], target)
+        cls_losses, tri_losses = [], []
+        if 'softmax' in self.loss_type or 'arcface' in self.loss_type:
+            cls_loss = self.ce_loss(ce_logit[0], target)
+            cls_losses.append(cls_loss)
         if 'triplet' in self.loss_type or 'multisimilarity' in self.loss_type:
             tri_loss = self.tri_loss(tri_logit[0], target)
-            return [cls_loss], [tri_loss]
-        else:
-            return [cls_loss], []
+            tri_losses.append(tri_loss)
+        return cls_losses, tri_losses
 
 
 

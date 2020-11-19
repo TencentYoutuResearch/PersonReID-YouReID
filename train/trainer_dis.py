@@ -18,10 +18,9 @@ import evaluate
 
 from core.config import config
 from core.loss import normalize
-from core.layers import convert_dsbn, convert_dsbnConstBatch
+from core.layers import convert_dsbn, convert_dsbnConstBatch, convert_dsbnShare
 import argparse
 import os
-
 
 os.environ['CUDA_VISIBLE_DEVICES'] = ','.join([str(x) for x in config.get('gpus')])
 logger = Logger(config.get('task_id'), rank=os.environ['RANK'])
@@ -35,10 +34,9 @@ def bulid_dataset():
     #     params = {}
     # else:
     #     params = {'mgn_style_aug': cfg['mgn_style_aug']}
-    data = dataset.__dict__[cfg['name']](root=cfg['root'], dataname=cfg['train_name'], part='train',
+    data = dataset.__dict__[cfg['train_class']](root=cfg['root'], dataname=cfg['train_name'], part='train',
                                          size=(cfg['height'], cfg['width']),
                                          least_image_per_class=cfg['least_image_per_class'],
-                                         load_img_to_cash= cfg['load_img_to_cash'],
                                          **params
                                          )
     train_sampler = DistributeRandomIdentitySampler(data, cfg['batch_size'],
@@ -53,14 +51,14 @@ def bulid_dataset():
     test_loader = {
         'query':
             torch.utils.data.DataLoader(
-                dataset.__dict__[cfg['name']](root=cfg['root'], dataname=cfg['test_name'], part='query',
+                dataset.__dict__[cfg['test_class']](root=cfg['root'], dataname=cfg['test_name'], part='query',
                                             require_path=True, size=(cfg['height'], cfg['width']),
                                               **params
                                             ),
                 batch_size=cfg['batch_size'], shuffle=False, num_workers=cfg['workers'], pin_memory=True),
         'gallery':
             torch.utils.data.DataLoader(
-                dataset.__dict__[cfg['name']](root=cfg['root'], dataname=cfg['test_name'],
+                dataset.__dict__[cfg['test_class']](root=cfg['root'], dataname=cfg['test_name'],
                                               part='gallery', require_path=True,
                                               size=(cfg['height'], cfg['width']),
                                               **params
@@ -107,6 +105,7 @@ def main():
     if split_bn:
         # convert_dsbn(model)
         convert_dsbnConstBatch(model, batch_size=config.get('dataset_config')['batch_size'], constant_batch=32)
+        # convert_dsbnShare(model, constant_batch=32)
     model = model.cuda()
     model = nn.parallel.DistributedDataParallel(model,
                                                 device_ids=[int(os.environ['LOCAL_RANK'])],
@@ -224,12 +223,17 @@ def train(scaler, train_loader, model, optimizer, lr_scheduler, epoch):
         # compute gradient and do SGD step
         optimizer.zero_grad()
         with torch.cuda.amp.autocast():
-            output = model(input)
+            output = model(input, target)
             ce_losses, tri_losses = model.module.compute_loss(output, target)
-            ce_loss = torch.sum(torch.stack(ce_losses, dim=0))
-            tri_loss = torch.sum(torch.stack(tri_losses, dim=0))
+            if ce_losses:
+                ce_loss = torch.sum(torch.stack(ce_losses, dim=0))
+            else:
+                ce_loss = 0
+            if tri_losses:
+                tri_loss = torch.sum(torch.stack(tri_losses, dim=0))
+            else:
+                tri_loss = 0
             loss = ce_loss + tri_loss  # args.weight*
-
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
