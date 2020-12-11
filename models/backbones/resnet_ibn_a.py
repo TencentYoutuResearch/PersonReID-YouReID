@@ -8,6 +8,7 @@ import torch.nn as nn
 import math
 import torch.utils.model_zoo as model_zoo
 from collections import OrderedDict
+from core.layers import NonLocal
 import os
 
 __all__ = ['ResNet', 'resnet50_ibn_a', 'resnet101_ibn_a',
@@ -17,8 +18,8 @@ model_urls = {
     'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
     'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
     'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
-    'resnet50_ibn_a': os.path.expanduser('~/.torch/models/resnet50_ibn_a.pth.tar'),
-    'resnet101_ibn_a': os.path.expanduser('~/.torch/models/resnet101_ibn_a.pth.tar')
+    'resnet50_ibn_a': os.path.expanduser('~/.cache/torch/hub/checkpoints/resnet50_ibn_a.pth.tar'),
+    'resnet101_ibn_a': os.path.expanduser('~/.cache/torch/hub/checkpoints/resnet101_ibn_a.pth.tar')
 }
 
 
@@ -80,7 +81,7 @@ class IBN(nn.Module):
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, inplanes, planes, ibn=False, stride=1, downsample=None):
+    def __init__(self, inplanes, planes, ibn=False, stride=1, downsample=None, use_non_local=False):
         super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         if ibn:
@@ -95,6 +96,11 @@ class Bottleneck(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
+
+        self.use_non_local = use_non_local
+        if self.use_non_local:
+            self.non_local_block = NonLocal(planes * self.expansion,
+                                            planes * self.expansion // 16)
 
     def forward(self, x):
         residual = x
@@ -116,6 +122,9 @@ class Bottleneck(nn.Module):
         out += residual
         out = self.relu(out)
 
+        if self.use_non_local:
+            out = self.non_local_block(out)
+
         return out
 
 
@@ -126,6 +135,8 @@ class ResNet(nn.Module):
         self.inplanes = scale
         self.for_test = for_test
         super(ResNet, self).__init__()
+        self.use_non_local = kwargs.get('use_non_local', False)
+
         self.conv1 = nn.Conv2d(3, scale, kernel_size=7, stride=2, padding=3,
                                bias=False)
         self.bn1 = nn.BatchNorm2d(scale)
@@ -133,23 +144,23 @@ class ResNet(nn.Module):
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, scale, layers[0])
         self.layer2 = self._make_layer(block, scale * 2, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, scale * 4, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, scale * 8, layers[3], stride=last_stride)
+        self.layer3 = self._make_layer(block, scale * 4, layers[2], stride=2, use_non_local=self.use_non_local)
+        self.layer4 = self._make_layer(block, scale * 8, layers[3], stride=last_stride, use_non_local=self.use_non_local)
         self.avgpool = nn.AvgPool2d(7)
         self.fc = nn.Linear(scale * 8 * block.expansion, num_classes)
 
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
-            elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
-            elif isinstance(m, nn.InstanceNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
+        # for m in self.modules():
+        #     if isinstance(m, nn.Conv2d):
+        #         n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+        #         m.weight.data.normal_(0, math.sqrt(2. / n))
+        #     elif isinstance(m, nn.BatchNorm2d):
+        #         m.weight.data.fill_(1)
+        #         m.bias.data.zero_()
+        #     elif isinstance(m, nn.InstanceNorm2d):
+        #         m.weight.data.fill_(1)
+        #         m.bias.data.zero_()
 
-    def _make_layer(self, block, planes, blocks, stride=1):
+    def _make_layer(self, block, planes, blocks, stride=1, use_non_local=False):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
@@ -165,7 +176,8 @@ class ResNet(nn.Module):
         layers.append(block(self.inplanes, planes, ibn, stride, downsample))
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
-            layers.append(block(self.inplanes, planes, ibn))
+            use_non_local_flag = use_non_local and i == blocks - 2
+            layers.append(block(self.inplanes, planes, ibn, use_non_local = use_non_local_flag))
 
         return nn.Sequential(*layers)
 
@@ -199,7 +211,7 @@ def resnet50_ibn_a(pretrained=False, last_stride=1, **kwargs):
         for k in state_dict['state_dict']:
             new_k = k.replace('module.', '')
             new_state_dict[new_k] = state_dict['state_dict'][k]
-        model.load_state_dict(new_state_dict, strict=True)
+        model.load_state_dict(new_state_dict, strict=False)
     return model
 
 
@@ -210,7 +222,11 @@ def resnet101_ibn_a(pretrained=False, last_stride=1, **kwargs):
     """
     model = ResNet(Bottleneck, [3, 4, 23, 3], last_stride=last_stride, **kwargs)
     if pretrained:
-        state_dict = torch.load(model_urls['resnet101_ibn_a'])
+        if 'LOCAL_RANK' in os.environ and os.environ['LOCAL_RANK']:
+            print('map weight to cuda: %s' % str(os.environ['LOCAL_RANK']))
+            state_dict = torch.load(model_urls['resnet101_ibn_a'], map_location="cuda:" + str(os.environ['LOCAL_RANK']))
+        else:
+            state_dict = torch.load(model_urls['resnet101_ibn_a'])
         new_state_dict = OrderedDict()
         for k in state_dict['state_dict']:
             new_k = k.replace('module.', '')

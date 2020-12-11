@@ -7,16 +7,17 @@ import torch.utils.data as data
 import torchvision.transforms as transforms
 import utils.my_transforms as my_transforms
 import os
-
+from copy import deepcopy
+from PIL import Image
 
 class TFRecordDataset(data.Dataset):
     def __init__(self, root='/raid/home/fufuyu/dataset/',
-                 dataname='market1501', part='train',
+                 dataname='TFR-market1501',
                  least_image_per_class=4,
                  size=(384, 128), prng=np.random, **kwargs):
-        self.names = dataname
+        self.dataname = dataname
         self.tfrecord_root = root
-        self.mode = part
+        self.mode = kwargs.get('mode', 'train')
         self.getFileList()  #self.filelist, self.labellist =
         self.logger = kwargs.get('logger', print)
         self.return_cam = kwargs.get('return_cam', False)
@@ -42,28 +43,58 @@ class TFRecordDataset(data.Dataset):
 
             ])
 
+        classes, self.imgs = self._postprocess(self.imgs, least_image_per_class)
+        self.class_num = len(classes)
+
+        self.logger('\n')
+        self.logger('  **************** Summary ****************')
+        self.logger('  #  name : {}   part: {}'.format(dataname, self.mode))
+        self.logger('  #  ids      : {}'.format(self.class_num))
+        self.logger('  #  images   : {}'.format(len(self.imgs)))
+        self.logger('  *****************************************')
+        self.logger('\n')
+
+
+    def _postprocess(self, imgs, least_image_per_class=4):
+        image_dict = {}
+        for _, c in imgs:
+            if c not in image_dict:
+                image_dict[c] = 1
+            else:
+                image_dict[c] += 1
+
+        temp = deepcopy(image_dict)
+
+        for k,v in temp.items():
+            if v < least_image_per_class:
+                image_dict.pop(k)
+
+        new_class_to_idx = {k: i for i, k in enumerate(list(image_dict.keys()))}
+
+        new_imgs = []
+        for path, c in imgs:
+            if c in new_class_to_idx:
+                new_imgs.append((path, new_class_to_idx[c]))
+
+        classes = list(range(len(new_class_to_idx)))
+
+        return classes, new_imgs
+
 
     def getFileList(self):
-        self.filelist, self.labellist = [], []
-        self.label_offset = 0
-        for idx in self.names:
-            index_filepath = os.path.join(self.tfrecord_root, idx, idx + '.txt')
-            with open(index_filepath, "r") as idx_r:
-                for line in idx_r:
-                    data_name, tf_num, offset, label = line.rstrip().split('\t')[:4]
-                    # file_name = '{0}*{1:05}*{2}'.format(data_name, int(tf_num), offset)
-                    file_name = (data_name, str(tf_num).zfill(5), offset)
-                    self.filelist.append(file_name)
-                    label = int(label) + self.label_offset
-                    self.labellist.append(label)
-            self.label_offset = max(self.labellist)
+        self.imgs = []
+        # self.label_offset = 0
+        # for idx in self.names:
+        index_filepath = os.path.join(self.tfrecord_root, self.dataname, self.dataname + '.txt')
+        with open(index_filepath, "r") as idx_r:
+            for line in idx_r:
+                data_name, tf_num, offset, label = line.rstrip().split('\t')[:4]
+                # file_name = '{0}*{1:05}*{2}'.format(data_name, int(tf_num), offset)
+                file_name = ((data_name, str(tf_num).zfill(5), offset), int(label))
+                self.imgs.append(file_name)
+                # label = int(label) #+ self.label_offset
+                # self.labellist.append(label)
 
-
-    def get_file_loc(self, index):
-        return self.filelist[index]
-
-    def get_label(self, index):
-        return self.labellist[index]
 
     def __getitem__(self, index):
         """
@@ -73,20 +104,22 @@ class TFRecordDataset(data.Dataset):
         Returns:
             tuple: (image, target) where target is class_index of the target class.
         """
-        file_loc, label = self.get_file_loc(index), self.get_label(index)
+        file_loc, label = self.imgs[index]
         src_img = self.getImageData(file_loc)
         img = cv2.imdecode(np.asarray(bytearray(src_img), dtype=np.uint8), 1)
         img = img[:, :, ::-1]
-        img, mirrored = self.transform(img)
+        img = Image.fromarray(img)
+        Image.fromstring()
+        img = self.transform(img)
 
         return img, label
 
     def __len__(self):
-        return len(self.filelist)
+        return len(self.imgs)
 
     def getImageData(self, file_loc):
         data_name, tf_num, offset = file_loc
-        tf_file = self.tfrecord_root + "/remote_tfrecord" + "/" + data_name + "/" + data_name + "-" + tf_num + ".tfrecord"
+        tf_file = self.tfrecord_root + "/" + data_name + "/" + data_name + "-" + tf_num + ".tfrecord"
 
         with open(tf_file, 'rb') as tf:
             tf.seek(int(offset))

@@ -9,6 +9,8 @@ from torch import nn
 from torch.utils import model_zoo
 from torchvision.ops.deform_conv import DeformConv2d
 from core.layers import NonLocal
+import os
+import numpy as np
 
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
@@ -181,7 +183,13 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        # np.save('/raid/home/fufuyu/snapshot/distribute/baseline_b128_mdmc_mix/input.npy', x.cpu().numpy())
+        # x = np.loadtxt('/raid/home/fufuyu/snapshot/distribute/baseline_b128_mdmc_mix/network_input.out', dtype=np.float32)
+        # x = np.reshape(x, (1, 3, 256, 128))
+        # x = torch.from_numpy(x).cuda()
         x = self.conv1(x)
+        # np.save('/raid/home/fufuyu/snapshot/distribute/baseline_b128_mdmc_mix/test.npy', x.cpu().numpy())
+        # np.save('/raid/home/fufuyu/snapshot/distribute/baseline_b128_mdmc_mix/conv1.npy', self.conv1.weight.cpu().numpy())
         x = self.bn1(x)
         x = self.relu(x)
         x = self.maxpool(x)
@@ -197,7 +205,11 @@ class ResNet(nn.Module):
         with_model_path = (model_path is not '')
         if not with_model_path:  # resnet pretrain
             print('Download from', model_urls[self._model_name])
-            state_dict = model_zoo.load_url(model_urls[self._model_name])
+            if 'LOCAL_RANK' in os.environ and os.environ['LOCAL_RANK']:
+                print('map weight to cuda: %s' % str(os.environ['LOCAL_RANK']))
+                state_dict = model_zoo.load_url(model_urls[self._model_name], map_location="cuda:" + str(os.environ['LOCAL_RANK']))
+            else:
+                state_dict = model_zoo.load_url(model_urls[self._model_name])
             state_dict.pop('fc.weight')
             state_dict.pop('fc.bias')
             self.load_state_dict(state_dict, strict=False)

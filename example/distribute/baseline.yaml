@@ -10,6 +10,7 @@ dataset_config:
   batch_size: 32 # 128 是fp32 2卡配置
   load_img_to_cash: 0
   least_image_per_class: 4
+  sample_image_per_class: 4
   use_tf_sample: 0
   use_random_pad: 0
   mgn_style_aug: false

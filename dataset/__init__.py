@@ -5,5 +5,10 @@ from .occluded_duke import Occluded_Duke
 from .mask_market1501 import MaskMarket1501
 from .pair import Pair
 from .challenge import KESCI
+from .tfrecord import TFRecordDataset
+from .testdata import TestData
 
-__all__ = [ 'FormatData', 'FormatDatas', 'PartialOrOccluded', 'Occluded_Duke', 'MaskMarket1501', 'Pair', 'KESCI']
+__all__ = [ 'FormatData', 'FormatDatas', 'PartialOrOccluded',
+            'Occluded_Duke', 'MaskMarket1501', 'Pair', 'KESCI',
+            'TFRecordDataset', 'TestData'
+            ]

@@ -3,12 +3,12 @@
 # @Author: fufuyu
 # @Email:  fufuyu@tencen.com
 
+import torch
 from .backbones import model_zoo
 from core.loss import *
 from core.layers import GeneralizedMeanPoolingP
-import numpy as np
 
-class Baseline(nn.Module):
+class BaselineProb(nn.Module):
     def __init__(self,
                  num_classes=1000,
                  num_layers=50,
@@ -19,7 +19,7 @@ class Baseline(nn.Module):
                  margin=0.5,
                  use_non_local=False
                  ):
-        super(Baseline, self).__init__()
+        super(BaselineProb, self).__init__()
         kwargs = {
             'use_non_local': use_non_local
         }
@@ -67,14 +67,9 @@ class Baseline(nn.Module):
                 self.ce_loss = CrossEntropyLabelSmooth(num_classes)
             else:
                 self.ce_loss = nn.CrossEntropyLoss()  # .cuda()
-        if 'triplet' in self.loss_type:
-            self.tri_loss = TripletLoss(margin, normalize_feature=not 'circle' in self.loss_type) #.cuda()
-        if 'soft_triplet' in self.loss_type:
-            self.tri_loss = SoftTripletLoss(margin, normalize_feature=not 'circle' in self.loss_type) #.cuda()
-        if 'div_triplet' in self.loss_type:
-            self.tri_loss = DivTripletLoss(margin, normalize_feature=not 'circle' in self.loss_type) #.cuda()
-        if 'multisimilarity' in self.loss_type:
-            self.tri_loss = MultiSimilarityLoss()
+
+        self.tri_loss = ProbTripletLoss(margin, normalize_feature=not 'circle' in self.loss_type)
+
     @staticmethod
     def _init_bn(bn):
         nn.init.constant_(bn[0].weight, 1.)
@@ -103,7 +98,7 @@ class Baseline(nn.Module):
             x = torch.sum(x * score, dim=[2, 3], keepdim=True)
 
         x = self.embedding_layer(x)
-        x = self.bn(x) #.squeeze(dim=3).squeeze(dim=2)
+        x = self.bn(x).squeeze(dim=3).squeeze(dim=2)
         if self.training:
             if 'softmax' in self.loss_type:
                 y = self.fc_layer(x)
@@ -112,7 +107,7 @@ class Baseline(nn.Module):
                 y = self.fc_layer(x, label)
                 return [y], [x]
         else:
-            return x
+            return [x], [x]
 
     def compute_loss(self, output, target):
         ce_logit, tri_logit = output
@@ -120,10 +115,10 @@ class Baseline(nn.Module):
         if 'softmax' in self.loss_type or 'arcface' in self.loss_type:
             cls_loss = self.ce_loss(ce_logit[0], target)
             cls_losses.append(cls_loss)
-        if 'triplet' in self.loss_type or 'soft_triplet' in self.loss_type or 'div_triplet' in self.loss_type  \
-                or 'multisimilarity' in self.loss_type:
-            tri_loss = self.tri_loss(tri_logit[0], target)
-            tri_losses.append(tri_loss)
+
+        tri_loss = self.tri_loss(tri_logit[0], target, torch.softmax(ce_logit[0], dim=-1))
+        tri_losses.append(tri_loss)
+
         return cls_losses, tri_losses
 
 

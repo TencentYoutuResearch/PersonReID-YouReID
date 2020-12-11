@@ -1,24 +1,31 @@
 import copy
 import torch
 from torch import nn
-from .backbones.resnet import resnet50, resnet101, resnext101_32x8d
-from .backbones.resnet_ibn_a import resnet50_ibn_a, resnet101_ibn_a
+from .backbones import model_zoo
 import math
+from core.loss import *
 
 class MGN(nn.Module):
-    def __init__(self, num_classes=1000, stripes=[2, 3], num_layers=50):
+    def __init__(self,
+                 last_stride=1,
+                 use_non_local=False,
+                 num_classes=1000,
+                 stripes=[2, 3],
+                 num_layers=50,
+                 loss_type=['softmax, triplet'],
+                 margin=0.5
+                 ):
         super(MGN, self).__init__()
         self.stripes = stripes
-        if num_layers == 50:
-            resnet = resnet50(pretrained=True, last_stride=1)
-        elif num_layers == 101:
-            resnet = resnet101(pretrained=True, last_stride=1)
-        elif num_layers == '101_32x8d':
-            resnet = resnext101_32x8d(pretrained=True, last_stride=1)
-        elif num_layers == '50_ibn':
-            resnet = resnet50_ibn_a(pretrained=True, last_stride=1)
-        elif num_layers == '101_ibn':
-            resnet = resnet101_ibn_a(pretrained=True, last_stride=1)
+        self.margin = margin
+        self.loss_type= loss_type
+        kwargs = {
+            'use_non_local': use_non_local
+        }
+        resnet = model_zoo[num_layers](
+            pretrained=True, last_stride=last_stride,
+            **kwargs
+        )
         self.backone = nn.Sequential(
             resnet.conv1,
             resnet.bn1,
@@ -48,6 +55,17 @@ class MGN(nn.Module):
             )
         self.branches = nn.ModuleList(branches)
 
+        if 'softmax' in self.loss_type:
+            if 'labelsmooth' in self.loss_type:
+                self.ce_loss = CrossEntropyLabelSmooth(num_classes)
+            else:
+                self.ce_loss = nn.CrossEntropyLoss()  # .cuda()
+
+        if 'triplet' in self.loss_type:
+            self.tri_loss = TripletLoss(margin, normalize_feature=not 'circle' in self.loss_type) #.cuda()
+        if 'soft_triplet' in self.loss_type:
+            self.tri_loss = SoftTripletLoss(margin, normalize_feature=not 'circle' in self.loss_type) #.cuda()
+
     @staticmethod
     def _init_reduction(reduction):
         # conv
@@ -63,7 +81,7 @@ class MGN(nn.Module):
         nn.init.normal_(fc[1].weight, std=0.001)
         nn.init.constant_(fc[1].bias, 0.)
 
-    def forward(self, x):
+    def forward(self, x, label=None):
         '''
         ('input.shape:', (64, 3, 384, 128))
         '''
@@ -92,4 +110,14 @@ class MGN(nn.Module):
             tri_logits.append(torch.cat(local_tri_logits, dim=1))
         return logits, tri_logits
 
+    def compute_loss(self, output, target):
+        ce_logits, tri_logits = output
+        cls_losses, tri_losses = [], []
+        for ce_logit in ce_logits:
+            cls_loss = self.ce_loss(ce_logit, target)
+            cls_losses.append(cls_loss)
+        for tri_logit in tri_logits:
+            tri_loss = self.tri_loss(tri_logit, target)
+            tri_losses.append(tri_loss)
+        return cls_losses, tri_losses
 

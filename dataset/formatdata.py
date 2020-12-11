@@ -316,6 +316,11 @@ class FormatDatas(data.Dataset):
         self.logger('\n')
 
     def __getitem__(self, index):
+        """
+        TODO： 这个dataset不知道怎么回事会造成读取数据时间变长
+        :param index:
+        :return:
+        """
         dataset_ind = 0
         for i in range(len(self.datasets)):
             if index < sum(self.lens[:i+1]):

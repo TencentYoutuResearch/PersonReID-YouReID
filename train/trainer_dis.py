@@ -10,7 +10,7 @@ import torch.optim
 import torch.utils.data
 import torch.utils.data.distributed
 import torch.distributed as dist
-
+import torchvision.datasets as datasets
 import models
 import dataset
 from utils import *
@@ -40,8 +40,9 @@ def bulid_dataset():
                                          **params
                                          )
     train_sampler = DistributeRandomIdentitySampler(data, cfg['batch_size'],
-                                          cfg['least_image_per_class'],
-                                          cfg['use_tf_sample']
+                                          cfg['sample_image_per_class'],
+                                          cfg['use_tf_sample'],
+                                          rnd_select_nid=cfg['rnd_select_nid'],
                                           )
     train_loader = torch.utils.data.DataLoader(
         data,
@@ -63,7 +64,16 @@ def bulid_dataset():
                                               size=(cfg['height'], cfg['width']),
                                               **params
                                             ),
-                batch_size=cfg['batch_size'], shuffle=False, num_workers=cfg['workers'], pin_memory=True), }
+                batch_size=cfg['batch_size'], shuffle=False, num_workers=cfg['workers'], pin_memory=True),
+        'train':
+            torch.utils.data.DataLoader(
+                dataset.__dict__[cfg['test_class']](root=cfg['root'], dataname=cfg['test_name'], part='train',
+                                                    require_path=True, size=(cfg['height'], cfg['width']),
+                                                    least_image_per_class=cfg['least_image_per_class'],
+                                                    **params
+                                                    ),
+                batch_size=cfg['batch_size'], shuffle=False, num_workers=cfg['workers'], pin_memory=True),
+    }
 
     return train_loader, test_loader
 
@@ -124,8 +134,12 @@ def main():
         model.load_state_dict(checkpoint['state_dict'], strict=False)
         logger.write(model)
         logger.write("=> loading checkpoint '{}'".format(ckpt))
-        extract(test_loader, model)
-        evaluate.eval_result(config.get('dataset_config')['test_name'],
+        if config.get('convert_to_onnx'):
+            convert_to_onnx(model, test_loader)
+            # torch.onnx.export(model, )
+        else:
+            extract(test_loader, model)
+            evaluate.eval_result(config.get('dataset_config')['test_name'],
                              root=config.get('task_id'),
                              use_pcb_format=True,
                              logger=logger
@@ -158,7 +172,7 @@ def main():
     if ocfg['mode'] == 'train':
         ckpt = os.path.join(config.get('task_id'), 'checkpoint.pth')
         if os.path.exists(ckpt):
-            print("=> loading checkpoint '{}'".format(ckpt))
+            logger.write("=> loading checkpoint '{}'".format(ckpt))
             checkpoint = torch.load(ckpt, map_location="cuda:" + str(os.environ['LOCAL_RANK']))
             start_epoch = checkpoint['epoch']
             model.load_state_dict(checkpoint['state_dict'])
@@ -257,6 +271,22 @@ def train(scaler, train_loader, model, optimizer, lr_scheduler, epoch):
                 data_time=data_time, loss=show_loss,
                 lr=lr_scheduler.optimizer.param_groups[0]['lr']))
 
+    if i % config.get('print_freq') != 0:
+        show_loss = ' '
+        for ce_id, ce in enumerate(ce_losses):
+            show_loss += 'CE_%d: %f ' % (ce_id, ce.item())
+        for tri_id, tri in enumerate(tri_losses):
+            show_loss += 'Tri_%d: %f ' % (tri_id, tri.item())
+        logger.write('Epoch: [{0}][{1}/{2}] '
+                     'Time {batch_time:.3f} '
+                     'Data {data_time:.3f} '
+                     'lr {lr: .6f} '
+                     '{loss}'.format(
+            epoch, i, len(train_loader) // len(config.get('gpus')), batch_time=batch_time,
+            data_time=data_time, loss=show_loss,
+            lr=lr_scheduler.optimizer.param_groups[0]['lr']))
+
+
 def extract(test_data, model):
     model.eval()
     for p, val_loader in test_data.items():
@@ -271,14 +301,18 @@ def extract(test_data, model):
                 target = target.cuda(non_blocking=True)
                 # compute output
                 outputs = model(input)
-                feat = normalize(torch.cat(outputs[1], dim=1))
+                if isinstance(outputs, (list, tuple)):
+                    feat = normalize(torch.cat([normalize(x) for x in outputs[1]], dim=1))
+                else:
+                    feat = normalize(outputs)
+                #
+                if config.get('with_flip'):
+                    input_ = input.flip(3)
+                    outputs = model(input_)
+                    feat_ = normalize(torch.cat(outputs[1], dim=1))
 
-                input_ = input.flip(3)
-                outputs = model(input_)
-                feat_ = normalize(torch.cat(outputs[1], dim=1))
-
-                feat = (feat + feat_) / 2
-                feat = normalize(feat)
+                    feat = (feat + feat_) / 2
+                    feat = normalize(feat)
 
                 feature = feat.cpu()
                 target = target.cpu()
@@ -298,6 +332,20 @@ def extract(test_data, model):
             print(all_feature.shape, all_label.shape)
             save_feature(p, config.get('dataset_config')['test_name'], all_feature, all_label, paths)
 
+
+def convert_to_onnx(model, test_loader):
+    model.eval()
+    for p, val_loader in test_loader.items():
+        with torch.no_grad():
+            for i, (input, target, path) in enumerate(val_loader):
+                input = input.cuda(non_blocking=True)
+                target = target.cuda(non_blocking=True)
+                torch.onnx.export(model, input, os.path.join(config.get('task_id'), 'reid.onnx'),
+                                  verbose=True, export_params=True, do_constant_folding=True,
+                                  input_names=['input'], output_names=['output']
+                                  )
+                break
+        break
 
 def save_feature(part, data, features, labels, paths):
     if not os.path.exists(config.get('task_id')):

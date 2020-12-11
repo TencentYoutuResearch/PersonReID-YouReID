@@ -69,12 +69,26 @@ class TripletLoss(nn.Module):
             return self.ranking_loss(dist_an - dist_ap, y)
 
 
+class DivTripletLoss(nn.Module):
+    """Triplet loss with hard positive/negative mining.
 
-class SoftTripletLoss(nn.Module):
+    Reference:
+        Hermans et al. In Defense of the Triplet Loss for Person Re-Identification. arXiv:1703.07737.
 
+    Imported from `<https://github.com/Cysu/open-reid/blob/master/reid/loss/triplet.py>`_.
 
-    def __init__(self):
-        super(SoftTripletLoss, self).__init__()
+    Args:
+        margin (float, optional): margin for triplet. Default is 0.3.
+    """
+
+    def __init__(self, margin=0.3, normalize_feature=True):
+        super(DivTripletLoss, self).__init__()
+        self.margin = margin
+        self.normalize_feature = normalize_feature
+        if margin > 0 :
+            self.ranking_loss = nn.MarginRankingLoss(margin=margin)
+        else:
+            self.ranking_loss = nn.SoftMarginLoss()
 
     def forward(self, inputs, targets):
         """
@@ -82,6 +96,8 @@ class SoftTripletLoss(nn.Module):
             inputs (torch.Tensor): feature matrix with shape (batch_size, feat_dim).
             targets (torch.LongTensor): ground truth labels with shape (num_classes).
         """
+        if self.normalize_feature:
+            inputs = normalize(inputs, axis=-1)
         n = inputs.size(0)
 
         # Compute pairwise distance, replace by the official when merged
@@ -92,19 +108,125 @@ class SoftTripletLoss(nn.Module):
 
         # For each anchor, find the hardest positive and negative
         mask = targets.expand(n, n).eq(targets.expand(n, n).t())
+        dist_ap, dist_an = [], []
+        for i in range(n):
+            dist_ap.append(dist[i][mask[i]].max().unsqueeze(0))
+            dist_an.append(dist[i][mask[i] == 0].min().unsqueeze(0))
+        dist_ap = torch.cat(dist_ap)
+        dist_an = torch.cat(dist_an)
+
+        return torch.mean((dist_ap + self.margin) / (dist_an + 1e-5))
+
+
+class ProbTripletLoss(nn.Module):
+    """Triplet loss with hard positive/negative mining.
+
+    Reference:
+        Hermans et al. In Defense of the Triplet Loss for Person Re-Identification. arXiv:1703.07737.
+
+    Imported from `<https://github.com/Cysu/open-reid/blob/master/reid/loss/triplet.py>`_.
+
+    Args:
+        margin (float, optional): margin for triplet. Default is 0.3.
+    """
+
+    def __init__(self, margin=0.3, normalize_feature=True):
+        super(ProbTripletLoss, self).__init__()
+        self.margin = margin
+        self.normalize_feature = normalize_feature
+        if margin > 0 :
+            self.ranking_loss = nn.MarginRankingLoss(margin=margin)
+        else:
+            self.ranking_loss = nn.SoftMarginLoss()
+
+    def forward(self, inputs, targets, probs):
+        """
+        Args:
+            inputs (torch.Tensor): feature matrix with shape (batch_size, feat_dim).
+            targets (torch.LongTensor): ground truth labels with shape (num_classes).
+        """
+        probs = probs.detach()
+        if self.normalize_feature:
+            inputs = normalize(inputs, axis=-1)
+        n = inputs.size(0)
+
+        # Compute pairwise distance, replace by the official when merged
+        dist = torch.pow(inputs, 2).sum(dim=1, keepdim=True).expand(n, n)
+        dist = dist + dist.t()
+        dist.addmm_(1, -2, inputs, inputs.t())
+        dist = dist.clamp(min=1e-12).sqrt()  # for numerical stability
+
+        # For each anchor, find the hardest positive and negative
+        mask = targets.expand(n, n).eq(targets.expand(n, n).t())
+        pos_mask = torch.logical_xor(mask, torch.eye(n, device=mask.device))
+        neg_mask = torch.logical_not(mask)
+
+        dist_ap, dist_an = [], []
+        for i in range(n):
+            tprob = probs[:, targets[i]]
+            pos_prob = torch.where(pos_mask[i], tprob, torch.ones_like(tprob, device=mask.device))
+            neg_prob = torch.where(neg_mask[i], tprob, torch.zeros_like(tprob, device=mask.device))
+            dist_ap.append(dist[i][torch.argmin(pos_prob)].unsqueeze(0))
+            dist_an.append(dist[i][torch.argmax(neg_prob)].min().unsqueeze(0))
+        dist_ap = torch.cat(dist_ap)
+        dist_an = torch.cat(dist_an)
+
+        # Compute ranking hinge loss
+        y = torch.ones_like(dist_an)
+        if self.margin > 0:
+            return self.ranking_loss(dist_an, dist_ap, y)
+        else:
+            return self.ranking_loss(dist_an - dist_ap, y)
+
+class SoftTripletLoss(nn.Module):
+
+
+    def __init__(self, margin=0.3, normalize_feature=True, scale=1.):
+        super(SoftTripletLoss, self).__init__()
+        self.margin = margin
+        self.normalize_feature = normalize_feature
+        self.scale = scale
+        if margin > 0:
+            self.ranking_loss = nn.ReLU(inplace=True)
+        else:
+            self.ranking_loss = nn.SoftMarginLoss()
+
+    def forward(self, inputs, targets):
+        """
+        Args:
+            inputs (torch.Tensor): feature matrix with shape (batch_size, feat_dim).
+            targets (torch.LongTensor): ground truth labels with shape (num_classes).
+        """
+        if self.normalize_feature:
+            inputs = normalize(inputs, axis=-1)
+        n = inputs.size(0)
+
+        # Compute pairwise distance, replace by the official when merged
+        dist = torch.pow(inputs, 2).sum(dim=1, keepdim=True).expand(n, n)
+        dist = dist + dist.t()
+        dist.addmm_(1, -2, inputs, inputs.t())
+        dist = dist.clamp(min=1e-12).sqrt()  # for numerical stability
+        dist_s = dist * self.scale
+        # For each anchor, find the hardest positive and negative
+        mask = targets.expand(n, n).eq(targets.expand(n, n).t())
+        pos_mask = torch.logical_xor(mask, torch.eye(n, dtype=torch.bool, device=mask.device))
         loss = 0
         for i in range(n):
-            neg = dist[i][mask[i] == 0]
+            neg = dist_s[i][mask[i] == 0]
             neg_weight = (-neg).exp() / (-neg).exp().sum()
             neg = (neg*neg_weight).sum()
 
-            pos = dist[i][mask[i]]
+            pos = dist_s[i][pos_mask[i]]
             pos_weight = pos.exp() / pos.exp().sum()
             pos = (pos * pos_weight).sum()
-            loss += F.softplus(pos-neg)
 
-
-        return loss/n
+            # Compute ranking hinge loss
+            y = torch.ones_like(pos)
+            if self.margin > 0:
+                loss += self.ranking_loss(pos + self.margin - neg)  #self.ranking_loss(neg, pos, y)
+            else:
+                loss += self.ranking_loss(neg - pos, y)
+        return loss / n
 
 
 
