@@ -5,13 +5,9 @@
 
 import torch
 import torch.nn.functional as F
-import math
-
-from torch import nn, Tensor
-from torch.nn import init
+from torch import nn
 from torch.nn.parameter import Parameter
-from torch.nn.modules.utils import _pair
-from torchvision.ops.deform_conv import deform_conv2d
+from .loss import normalize
 
 class GeneralizedMeanPooling(nn.Module):
     r"""Applies a 2D power-average adaptive pooling over an input signal composed of several input planes.
@@ -54,7 +50,7 @@ class GeneralizedMeanPoolingP(GeneralizedMeanPooling):
 
 
 class NonLocal(nn.Module):
-    def __init__(self, in_channels, inter_channels=None, bn_layer=True):
+    def __init__(self, in_channels, inter_channels=None, bn_layer=False):
         super(NonLocal, self).__init__()
 
 
@@ -119,72 +115,66 @@ class NonLocal(nn.Module):
         return z
 
 
-class DeformConv2d(nn.Module):
-    """
-    See deform_conv2d
-    """
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0,
-                 dilation=1, groups=1, bias=True):
-        super(DeformConv2d, self).__init__()
+class PairGraph(nn.Module):
+    def __init__(self, in_channels, inter_channels=None):
+        super(PairGraph, self).__init__()
 
-        if in_channels % groups != 0:
-            raise ValueError('in_channels must be divisible by groups')
-        if out_channels % groups != 0:
-            raise ValueError('out_channels must be divisible by groups')
 
         self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.kernel_size = _pair(kernel_size)
-        self.stride = _pair(stride)
-        self.padding = _pair(padding)
-        self.dilation = _pair(dilation)
-        self.groups = groups
+        self.inter_channels = inter_channels
 
-        self.weight = Parameter(torch.empty(out_channels, in_channels // groups,
-                                            self.kernel_size[0], self.kernel_size[1]))
+        if self.inter_channels is None:
+            self.inter_channels = in_channels // 16
+            if self.inter_channels == 0:
+                self.inter_channels = 1
 
-        if bias:
-            self.bias = Parameter(torch.empty(out_channels))
-        else:
-            self.register_parameter('bias', None)
 
-        self.offset = Parameter(torch.empty(out_channels, in_channels // groups,
-                                            self.kernel_size[0], self.kernel_size[1]))
-        batch_size, 2 * offset_groups * kernel_height * kernel_width,
-        out_height, out_width
+        self.y = nn.Conv2d(in_channels=self.in_channels,
+                         out_channels=self.inter_channels,
+                         kernel_size=1, stride=1, padding=0)
 
-        self.reset_parameters()
+        self.g = nn.Conv2d(in_channels=self.in_channels,
+                               out_channels=self.inter_channels,
+                              kernel_size=1, stride=1, padding=0)
+        self.o = nn.Conv2d(in_channels=self.inter_channels,
+                              out_channels=self.in_channels,
+                              kernel_size=1, stride=1, padding=0)
 
-    def reset_parameters(self):
-        init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-        if self.bias is not None:
-            fan_in, _ = init._calculate_fan_in_and_fan_out(self.weight)
-            bound = 1 / math.sqrt(fan_in)
-            init.uniform_(self.bias, -bound, bound)
+        nn.init.constant_(self.o.weight, 0)
+        nn.init.constant_(self.o.bias, 0)
 
-    def forward(self, input, offset):
-        """
-        Arguments:
-            input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor
-            offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width,
-                out_height, out_width]): offsets to be applied for each position in the
-                convolution kernel.
-        """
-        return deform_conv2d(input, offset, self.weight, self.bias, stride=self.stride,
-                             padding=self.padding, dilation=self.dilation)
+        self.relu = nn.ReLU(inplace=True)
 
-    def __repr__(self):
-        s = self.__class__.__name__ + '('
-        s += '{in_channels}'
-        s += ', {out_channels}'
-        s += ', kernel_size={kernel_size}'
-        s += ', stride={stride}'
-        s += ', padding={padding}' if self.padding != (0, 0) else ''
-        s += ', dilation={dilation}' if self.dilation != (1, 1) else ''
-        s += ', groups={groups}' if self.groups != 1 else ''
-        s += ', bias=False' if self.bias is None else ''
-        s += ')'
-        return s.format(**self.__dict__)
+    def forward(self, x):
+        '''
+        :param x: (b, c, t, h, w)
+        :return:
+        '''
+
+        b, c, h, w = x.size()
+
+        y = self.y(x)
+        y = normalize(y, axis=1)   # n, c, h, w
+        y = y.view(b, self.inter_channels, -1)  # n, c, h*w
+        y1 = y.permute(0, 2, 1)   # n, h*w, c
+
+        coef = self.relu(y1.matmul(y))    # n, h*w, h*w
+
+        batch_eye = torch.eye(h*w, device=x.device).reshape(1, h*w, h*w).repeat(b, 1, 1)
+        adja = coef * (1. - batch_eye)
+        degree = torch.sum(adja, dim=-1, keepdim=True) * batch_eye
+        # flag = degree > 1e-3
+        temp = torch.where(degree > 1e-3, degree, torch.ones_like(degree, device=x.device))
+        # temp = flag * degree + (1 - flag) * torch.ones_like(degree, device=x.device)
+        norm = temp.rsqrt() * batch_eye
+        norm = norm.detach()
+        # norm = tf.stop_gradient(1. / (tf.sqrt(tf.where(degree > 1e-3, degree, tf.ones_like(degree))))) * tf.eye(h*w, batch_shape=[b])
+        f = torch.matmul(torch.matmul(norm, degree - adja), norm)   # n, h*w, h*w
+
+        g = self.g(x).reshape(b, self.inter_channels, -1)  # n, c, h*w
+        o = torch.matmul(g, f).reshape(b, self.inter_channels, h,w)
+        o = self.o(o)
+        return x + o
 
 
 class DSBN2d(nn.Module):
@@ -279,22 +269,6 @@ def convert_dsbnConstBatch(model, batch_size=64, constant_batch=32):
             convert_dsbnConstBatch(child, batch_size=batch_size, constant_batch=constant_batch)
 
 
-class Conv2d(nn.Conv2d):
-
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1,
-                 padding=0, dilation=1, groups=1, bias=True):
-        super(Conv2d, self).__init__(in_channels, out_channels, kernel_size, stride,
-                 padding, dilation, groups, bias)
-
-    def forward(self, x):
-        weight = self.weight
-        weight_mean = weight.mean(dim=1, keepdim=True).mean(dim=2,
-                                  keepdim=True).mean(dim=3, keepdim=True)
-        weight = weight - weight_mean
-        std = torch.pow(weight.view(weight.size(0), -1).var(dim=1) + 1e-5, 0.5).view(-1, 1, 1, 1)
-        weight = weight / std.expand_as(weight)
-        return F.conv2d(x, weight, self.bias, self.stride,
-                        self.padding, self.dilation, self.groups)
 
 def BatchNorm2d(num_features):
     num_groups = 32

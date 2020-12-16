@@ -309,8 +309,10 @@ def extract(test_data, model):
                 if config.get('with_flip'):
                     input_ = input.flip(3)
                     outputs = model(input_)
-                    feat_ = normalize(torch.cat(outputs[1], dim=1))
-
+                    if isinstance(outputs, (list, tuple)):
+                        feat_ = normalize(torch.cat(outputs[1], dim=1), axis=1)
+                    else:
+                        feat_ = normalize(outputs, axis=1)
                     feat = (feat + feat_) / 2
                     feat = normalize(feat)
 

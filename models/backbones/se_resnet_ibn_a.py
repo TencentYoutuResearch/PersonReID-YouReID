@@ -12,7 +12,7 @@ from collections import OrderedDict
 __all__ = ['se_resnet50_ibn_a', 'se_resnet101_ibn_a', 'se_resnet152_ibn_a']
 
 pretrained_settings = {
-    'se_resnet101_ibn_a': os.path.expanduser('~/.torch/pretrained/se_resnet101_ibn_a.pth.tar')
+    'se_resnet101_ibn_a': os.path.expanduser('~/.cache/torch/hub/checkpoints/se_resnet101_ibn_a.pth.tar')
 }
 
 
@@ -134,7 +134,7 @@ class SEBottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1000):
+    def __init__(self, block, layers, num_classes=1000, last_stride=2):
         self.inplanes = 64
         super(ResNet, self).__init__()
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
@@ -145,7 +145,7 @@ class ResNet(nn.Module):
         self.layer1 = self._make_layer(block, 64, layers[0])
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
+        self.layer4 = self._make_layer(block, 512, layers[3], stride=last_stride)
         self.avgpool = nn.AvgPool2d(7)
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
@@ -210,21 +210,26 @@ def se_resnet50_ibn_a(num_classes=1000):
     return model
 
 
-def se_resnet101_ibn_a(num_classes=1000, pretrained=True):
+def se_resnet101_ibn_a(num_classes=1000, pretrained=True, last_stride=1, **kwargs):
     """Constructs a ResNet-101 model.
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(SEBottleneck, [3, 4, 23, 3], num_classes=num_classes)
+    model = ResNet(SEBottleneck, [3, 4, 23, 3], num_classes=num_classes, last_stride=last_stride, **kwargs)
     model.avgpool = nn.AdaptiveAvgPool2d(1)
 
     if pretrained:
-        state_dict = torch.load(pretrained_settings['se_resnet101_ibn_a'])
+        if 'LOCAL_RANK' in os.environ and os.environ['LOCAL_RANK']:
+            print('map weight to cuda: %s' % str(os.environ['LOCAL_RANK']))
+            state_dict = torch.load(pretrained_settings['se_resnet101_ibn_a'],
+                                    map_location="cuda:" + str(os.environ['LOCAL_RANK']))
+        else:
+            state_dict = torch.load(pretrained_settings['se_resnet101_ibn_a'])
         new_state_dict = OrderedDict()
         for k in state_dict['state_dict']:
             new_k = k.replace('module.', '')
             new_state_dict[new_k] = state_dict['state_dict'][k]
-        model.load_state_dict(new_state_dict)
+        model.load_state_dict(new_state_dict, strict=True)
     return model
 
 

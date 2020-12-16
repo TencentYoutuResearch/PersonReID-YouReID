@@ -19,12 +19,12 @@ class MGN(nn.Module):
         self.stripes = stripes
         self.margin = margin
         self.loss_type= loss_type
-        kwargs = {
-            'use_non_local': use_non_local
-        }
+        # kwargs = {
+        #     'use_non_local': use_non_local
+        # }
         resnet = model_zoo[num_layers](
             pretrained=True, last_stride=last_stride,
-            **kwargs
+            # **kwargs
         )
         self.backone = nn.Sequential(
             resnet.conv1,
@@ -94,8 +94,9 @@ class MGN(nn.Module):
             # global
             global_feat = self.gap(net)
             global_feat_reduce = reduces[0](global_feat).squeeze(dim=3).squeeze(dim=2)
-            global_feat_logit = fcs[0](global_feat_reduce)
-            logits.append(global_feat_logit)
+            if self.training:
+                global_feat_logit = fcs[0](global_feat_reduce)
+                logits.append(global_feat_logit)
             tri_logits.append(global_feat_reduce)
             # local
             local_tri_logits = []
@@ -104,11 +105,16 @@ class MGN(nn.Module):
                 local_feat = net[:, :, i*stride: (i+1)*stride, :]
                 local_feat = self.gap(local_feat)
                 local_feat_reduce = reduces[i+1](local_feat).squeeze(dim=3).squeeze(dim=2)
-                local_feat_logit = fcs[i+1](local_feat_reduce)
-                logits.append(local_feat_logit)
+                if self.training:
+                    local_feat_logit = fcs[i+1](local_feat_reduce)
+                    logits.append(local_feat_logit)
                 local_tri_logits.append(local_feat_reduce)
             tri_logits.append(torch.cat(local_tri_logits, dim=1))
-        return logits, tri_logits
+
+        if self.training:
+            return logits, tri_logits
+        else:
+            return torch.cat(tri_logits, dim=1)
 
     def compute_loss(self, output, target):
         ce_logits, tri_logits = output

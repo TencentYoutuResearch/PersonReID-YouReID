@@ -1,15 +1,6 @@
-from models.legacy.resnet import *
-# from models.legacy.pcb import *
-# from models.legacy.resnet_enhanced import resnet50e, resnet152e
 from .mgn import MGN
 from .baseline import Baseline
-from .baseline_prob import BaselineProb
-from .baseline_split import BaselineSplit
-from .baseline_shuffle import BaselineShuffle
 from .pcb import PCB
-from .mpcb import MPCB
-from .pgfa import PGFA
-from .baseline_swav import SWAV
-# from models.legacy.baseline_arcface import BA
+from .cacenet import CACENET
 
-__all__ = ['PCB', 'MPCB', 'MGN', 'Baseline', 'PGFA', 'BaselineSplit', 'BaselineShuffle', 'BaselineProb', 'SWAV']
+__all__ = ['PCB', 'MGN', 'Baseline', 'CACENET']

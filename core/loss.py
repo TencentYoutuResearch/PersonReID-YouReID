@@ -36,23 +36,18 @@ class TripletLoss(nn.Module):
         else:
             self.ranking_loss = nn.SoftMarginLoss()
 
-    def forward(self, inputs, targets):
-        """
-        Args:
-            inputs (torch.Tensor): feature matrix with shape (batch_size, feat_dim).
-            targets (torch.LongTensor): ground truth labels with shape (num_classes).
-        """
-        if self.normalize_feature:
-            inputs = normalize(inputs, axis=-1)
+    def compute_distance(self, inputs):
         n = inputs.size(0)
-
         # Compute pairwise distance, replace by the official when merged
         dist = torch.pow(inputs, 2).sum(dim=1, keepdim=True).expand(n, n)
         dist = dist + dist.t()
         dist.addmm_(1, -2, inputs, inputs.t())
         dist = dist.clamp(min=1e-12).sqrt()  # for numerical stability
 
-        # For each anchor, find the hardest positive and negative
+        return dist
+
+    def compute_loss(self, dist, targets):
+        n = dist.size(0)
         mask = targets.expand(n, n).eq(targets.expand(n, n).t())
         dist_ap, dist_an = [], []
         for i in range(n):
@@ -67,6 +62,34 @@ class TripletLoss(nn.Module):
             return self.ranking_loss(dist_an, dist_ap, y)
         else:
             return self.ranking_loss(dist_an - dist_ap, y)
+
+    def forward(self, inputs, targets):
+        """
+        Args:
+            inputs (torch.Tensor): feature matrix with shape (batch_size, feat_dim).
+            targets (torch.LongTensor): ground truth labels with shape (num_classes).
+        """
+        if self.normalize_feature:
+            inputs = normalize(inputs, axis=-1)
+
+        dist = self.compute_distance(inputs)
+        # For each anchor, find the hardest positive and negative
+        return self.compute_loss(dist, targets)
+
+
+class PairTripletLoss(TripletLoss):
+    def __init__(self, margin=0.3, normalize_feature=True):
+        super(PairTripletLoss, self).__init__(margin, normalize_feature)
+
+    def forward(self, input_0, input_1, targets):
+        if self.normalize_feature:
+            input_0 = normalize(input_0, axis=-1)
+            input_1 = normalize(input_1, axis=-1)
+        n = targets.size(0)
+        pairwise_dist = torch.sqrt(torch.sum(torch.square(input_0 - input_1), dim=-1) + 1e-12)
+        pairwise_dist = torch.reshape(pairwise_dist, (n, n))
+
+        return self.compute_loss(pairwise_dist, targets)
 
 
 class DivTripletLoss(nn.Module):

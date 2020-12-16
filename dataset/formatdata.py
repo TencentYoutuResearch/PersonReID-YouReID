@@ -317,7 +317,6 @@ class FormatDatas(data.Dataset):
 
     def __getitem__(self, index):
         """
-        TODO： 这个dataset不知道怎么回事会造成读取数据时间变长
         :param index:
         :return:
         """

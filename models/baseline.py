@@ -103,7 +103,7 @@ class Baseline(nn.Module):
             x = torch.sum(x * score, dim=[2, 3], keepdim=True)
 
         x = self.embedding_layer(x)
-        x = self.bn(x) #.squeeze(dim=3).squeeze(dim=2)
+        x = self.bn(x).squeeze(dim=3).squeeze(dim=2)
         if self.training:
             if 'softmax' in self.loss_type:
                 y = self.fc_layer(x)

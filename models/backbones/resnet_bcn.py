@@ -7,8 +7,7 @@ import math
 import torch
 from torch import nn
 from torch.utils import model_zoo
-from torchvision.ops.deform_conv import DeformConv2d
-from core.layers import NonLocal, Conv2d, BatchNorm2d
+from core.layers import NonLocal, BatchNorm2d
 
 model_urls = {
     'resnet50': 'https://download.pytorch.org/models/rn50_bcn_ws.pth',
