@@ -1,1 +1,0 @@
-python train_baseline.py --gpu 6 --code baseline_101_256x128_gcb_b128_lr0.025 --epochs 80 --batch-size 128 --load_img_to_cash 0 --least_image_per_class 4 --use_tf_sample 0  --net Baseline --height 256 --width 128 --optim SGD --weight-decay 1e-3 --lr 0.025 --workers 16 --data Market1501 --margin 0.5

@@ -1,1 +1,0 @@
-python train_arcface.py --gpu 0,1,2,3 --code ba_101_ibn_256x128_kesci_4gpus_tf_sample --epochs 80 --batch-size 256 --load_img_to_cash 0 --least_image_per_class 1 --use_tf_sample 1  --net BA --height 256 --width 128 --optim SGD --weight-decay 1e-3 --lr 0.1 --workers 16 --data KESCI  --use_random_pad 0 

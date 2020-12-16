@@ -1,1 +1,0 @@
-python train_mgnv2.py --gpu 4,5 --code mgnv4_se_resnet101_ibn_a_32_tf_sample_kesci_2gpus --epochs 80 --batch-size 128 --load_img_to_cash 0 --least_image_per_class 2 --use_tf_sample 1  --net MGNv4 --height 384 --width 128 --optim SGD --weight-decay 1e-3 --lr 0.05 --workers 16 --data KESCI --margin 0.5

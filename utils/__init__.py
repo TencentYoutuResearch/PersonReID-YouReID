@@ -1,6 +1,5 @@
 import torch
 import shutil
-from .meter import AverageMeter
 from .logger import Logger, setup_logger
 from .epoch_lr import EpochBaseLR, WarmupMultiStepLR, CosineAnnealingWarmRestarts, CosineAnnealingWarmUp
 import os
