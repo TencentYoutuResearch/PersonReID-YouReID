@@ -7,9 +7,9 @@ YoutuReID is a research framework that implements state-of-the art person re-ide
 this project provides the following algorithms and scripts to run them. Please see the details in the link provided in the description column
 
 |ABBRV|Algorithms|Description|Status|
-|-|-|-|-|
+|:-:|:-:|:-:|:-:|
 |CACENET|<a href="https://arxiv.org/abs/2009.05250">Devil's in the Details: Aligning Visual Clues for Conditional Embedding in Person Re-Identification</a>|<a href="docs/CACENET/CACENET.md">CACENET.md</a>|finished|
-|Pyramid|<a href="https://openaccess.thecvf.com/content_CVPR_2019/papers/Zheng_Pyramidal_Person_Re-IDentification_via_Multi-Loss_Dynamic_Training_CVPR_2019_paper.pdf">Pyramidal Person Re-IDentification via Multi-Loss Dynamic Training</a>|<a href="docs/Pyramid/CVPR-2019-Pyramid.md">CVPR-2019-Pyramid.md</a>|coming|
+|Pyramid|<a href="https://openaccess.thecvf.com/content_CVPR_2019/papers/Zheng_Pyramidal_Person_Re-IDentification_via_Multi-Loss_Dynamic_Training_CVPR_2019_paper.pdf">Pyramidal Person Re-IDentification via Multi-Loss Dynamic Training</a>|<a href="docs/Pyramid/CVPR-2019-Pyramid.md">CVPR-2019-Pyramid.md</a>|coming soon|
 
 <table>
  <tbody>
