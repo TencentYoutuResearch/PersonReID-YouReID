@@ -48,17 +48,14 @@ class CACENET(nn.Module):
         nn.init.kaiming_normal_(self.embedding_layer[0].weight, mode='fan_out')
         self._init_bn(self.embedding_layer[1])
 
-        # self.embedding_layers = nn.Sequential(embedding_layer,
-        #                                       copy.deepcopy(embedding_layer),
-        #                                       copy.deepcopy(embedding_layer),
-        #                                       )
-        # nn.init.kaiming_normal_(self.embedding_layer.weight, mode='fan_out')
-        # self.bn = nn.Sequential(nn.BatchNorm2d(reduce_dim))
-        # self._init_bn(self.bn)
-
-        self.fc_layer = nn.Sequential(nn.Dropout(), nn.Linear(reduce_dim, num_classes))
+        self.fc_layer = nn.Sequential(nn.ReLU(inplace=True),
+                                      nn.Dropout(),
+                                      nn.Linear(reduce_dim, num_classes, bias=False))
         self._init_fc(self.fc_layer)
-        self.pair_fc_layer = copy.deepcopy(self.fc_layer) #nn.Sequential(copy.deepcopy(self.fc_layer), copy.deepcopy(self.fc_layer))
+        self.pair_fc_layer = nn.Sequential(nn.ReLU(inplace=True),
+                                           nn.Dropout(),
+                                           nn.Linear(reduce_dim, num_classes, bias=False))
+        self._init_fc(self.pair_fc_layer)
 
         # self.ce_loss = CrossEntropyLabelSmooth(num_classes)
         self.ce_loss = nn.CrossEntropyLoss()  # .cuda()
@@ -75,8 +72,8 @@ class CACENET(nn.Module):
     @staticmethod
     def _init_fc(fc):
         # nn.init.kaiming_normal_(fc.weight, mode='fan_out')
-        nn.init.normal_(fc[1].weight, std=0.001)
-        nn.init.constant_(fc[1].bias, 0.)
+        nn.init.normal_(fc[-1].weight, std=0.001)
+        # nn.init.constant_(fc[1].bias, 0.)
 
     def get_pair_feature(self, x):
         b = x.size(0)
@@ -92,7 +89,7 @@ class CACENET(nn.Module):
 
         return x1, x2
 
-    def head(self, x, i=0):
+    def head(self, x):
         if self.pool_type == 'baseline':
             x1 = self.gap(x)
             x2 = self.gmp(x)
@@ -120,8 +117,8 @@ class CACENET(nn.Module):
         # print(feat_pair.size())
         feat_0, feat_1 = feat_pair[:, :, :, :w], feat_pair[:, :, :, w:]
         f = self.head(x)
-        f_0 = self.head(feat_0, i=1)
-        f_1 = self.head(feat_1, i=2)
+        f_0 = self.head(feat_0)
+        f_1 = self.head(feat_1)
 
         if self.training:
             logit = self.fc_layer(f)

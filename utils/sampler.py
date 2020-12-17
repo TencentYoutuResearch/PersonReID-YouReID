@@ -145,7 +145,7 @@ class DistributeRandomIdentitySampler(Sampler):
             num = len(idxs)
             if num < self.num_instances:
                 num = self.num_instances
-            self.length += num - num % self.num_instances
+            self.length += num - 0 if self.use_tf_sample else num % self.num_instances
 
     def __iter__(self):
         if self.shuffle:
@@ -194,7 +194,7 @@ class DistributeRandomIdentitySampler(Sampler):
             return iter(rank_idxs)
 
         else:
-            # print('use mgn sample')
+            print('use mgn sample')
             avai_pids = copy.deepcopy(self.pids)
             index_dict = copy.deepcopy(self.index_dic)
             for pid in index_dict:

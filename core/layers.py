@@ -155,7 +155,7 @@ class PairGraph(nn.Module):
 
         y = self.y(x)
         y = normalize(y, axis=1)   # n, c, h, w
-        y = y.view(b, self.inter_channels, -1)  # n, c, h*w
+        y = y.reshape(b, self.inter_channels, -1)  # n, c, h*w
         y1 = y.permute(0, 2, 1)   # n, h*w, c
 
         coef = self.relu(y1.matmul(y))    # n, h*w, h*w
@@ -168,11 +168,10 @@ class PairGraph(nn.Module):
         # temp = flag * degree + (1 - flag) * torch.ones_like(degree, device=x.device)
         norm = temp.rsqrt() * batch_eye
         norm = norm.detach()
-        # norm = tf.stop_gradient(1. / (tf.sqrt(tf.where(degree > 1e-3, degree, tf.ones_like(degree))))) * tf.eye(h*w, batch_shape=[b])
         f = torch.matmul(torch.matmul(norm, degree - adja), norm)   # n, h*w, h*w
 
         g = self.g(x).reshape(b, self.inter_channels, -1)  # n, c, h*w
-        o = torch.matmul(g, f).reshape(b, self.inter_channels, h,w)
+        o = torch.matmul(g, f).reshape(b, self.inter_channels, h, w)
         o = self.o(o)
         return x + o
 

@@ -92,7 +92,7 @@ def main():
                       'which can slow down your training considerably! '
                       'You may see unexpected behavior when restarting '
                       'from checkpoints.')
-
+    logger.write(config._config)
     # Data loading code
     train_loader, test_loader = bulid_dataset()
     # create models
