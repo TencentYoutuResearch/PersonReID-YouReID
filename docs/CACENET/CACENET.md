@@ -1,22 +1,20 @@
 # [Devil's in the Details: Aligning Visual Clues for Conditional Embedding in Person Re-Identification](https://arxiv.org/abs/2009.05250)
 
-Devil's in the Details: Aligning Visual Clues for Conditional Embedding in Person Re-Identification is submitted to CVPR2021.
-In this paper, we proposed a strategy that integrates both visual clue alignment and conditional feature embedding into a unified ReID framework
-Instead of using a pre-defined Adjacency Matrix, our CACE-Net uses a novel correspondence attention module where the visual clues is automatically predicted and dynamically adjusted during training
+Devil's in the Details: Aligning Visual Clues for Conditional Embedding in Person Re-Identification is submitted to CVPR2021. In this paper, we proposed a strategy that integrates both visual clue alignment and conditional feature embedding into a unified ReID framework. Instead of using a pre-defined Adjacency Matrix, our CACE-Net uses a novel correspondence attention module where the visual clues is automatically predicted and dynamically adjusted during training
 
 ![image](cacenet_pipeline.png)
 
-# peformance
+## peformance 
 
 ![image](performance.png)
 
-# config
+## config
 ```yaml
 yaml: 'experiment/cacenet/cacenet.yaml'
 ```
 
 
-# Citation
+## Citation
 If you find this code useful, please cite the following paper:
 
 ```

@@ -6,6 +6,10 @@ YoutuReID is a research framework that implements state-of-the art person re-ide
 ## Capabilities
 this project provides the following algorithms and scripts to run them. Please see the details in the link provided in the description column
 
+|ABBRV|Algorithms|Description|Status|
+|-|-|-|-|
+|CACENET|<a href="https://arxiv.org/abs/2009.05250">Devil's in the Details: Aligning Visual Clues for Conditional Embedding in Person Re-Identification</a>|<a href="docs/CACENET/CACENET.md">CACENET.md</a>|finished|
+
 <table>
  <tbody>
     <tr align="center" valign="middle">
@@ -34,7 +38,7 @@ Please install `Python>=3.6` and `PyTorch>=1.6.0`.
 
 ## Geting Started
 
-### Clone these github repository:
+### Clone this github repository:
 ```
 git clone 
 ```
