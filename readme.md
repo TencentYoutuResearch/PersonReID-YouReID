@@ -17,13 +17,13 @@ this project provides the following algorithms and scripts to run them. Please s
     <tr> <!-- (1-st row) -->
     <td align="center" valign="middle"> CACENET </td>
     <td align="center" valign="middle"> <a href="https://arxiv.org/abs/2009.05250">Devil's in the Details: Aligning Visual Clues for Conditional Embedding in Person Re-Identification</a> </td>
-    <td align="center" valign="middle"> <a href="./docs/CVPR-2021-CACENET.md">CVPR-2021-CACENET.md</a> </td>
+    <td align="center" valign="middle"> <a href="docs/CACENET/CACENET.md">CACENET.md</a> </td>
     <td align="center" valign="middle"> finished </td>
     </tr>
     <tr> <!-- (2-st row) -->
     <td align="center" valign="middle"> Pyramid </td>
     <td align="center" valign="middle"> <a href="https://openaccess.thecvf.com/content_CVPR_2019/papers/Zheng_Pyramidal_Person_Re-IDentification_via_Multi-Loss_Dynamic_Training_CVPR_2019_paper.pdf">Pyramidal Person Re-IDentification via Multi-Loss Dynamic Training</a> </td>
-    <td align="center" valign="middle"> <a href="./docs/CVPR-2019-Pyramid.md">CVPR-2019-Pyramid.md</a> </td>
+    <td align="center" valign="middle"> <a href="docs/Pyramid/CVPR-2019-Pyramid.md">CVPR-2019-Pyramid.md</a> </td>
     <td align="center" valign="middle"> coming soon </td>>
  </tbody>
 </table>

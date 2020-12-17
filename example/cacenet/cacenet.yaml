@@ -8,7 +8,7 @@ dataset_config:
   part: train
   height: 384 #384
   width: 128
-  batch_size: 24 #16 # 128 是fp32 2卡配置
+  batch_size: 16
   load_img_to_cash: 0
   least_image_per_class: 4
   sample_image_per_class: 4
@@ -26,7 +26,7 @@ optm_config:
   momentum: 0.9
   epochs: 80
   start_epoch: 0
-  lr: 0.009375 #0.00625  #128 0.05
+  lr: 0.00625 #0.00625  #128 0.05
   resume: ''
 
 model_config:

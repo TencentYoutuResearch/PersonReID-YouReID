@@ -65,29 +65,29 @@ class NonLocal(nn.Module):
 
         self.g = nn.Conv2d(in_channels=self.in_channels,
                          out_channels=self.inter_channels,
-                         kernel_size=1, stride=1, padding=0)
+                         kernel_size=1, stride=1, padding=0, bias=False)
 
         if bn_layer:
             self.W = nn.Sequential(
                 nn.Conv2d(in_channels=self.inter_channels,
                           out_channels=self.in_channels,
-                        kernel_size=1, stride=1, padding=0),
+                        kernel_size=1, stride=1, padding=0, bias=False),
                 nn.BatchNorm2d(self.in_channels)
             )
             nn.init.constant_(self.W[1].weight, 0)
             nn.init.constant_(self.W[1].bias, 0)
         else:
             self.W = nn.Conv2d(in_channels=self.inter_channels, out_channels=self.in_channels,
-                             kernel_size=1, stride=1, padding=0)
+                             kernel_size=1, stride=1, padding=0, bias=False)
             nn.init.constant_(self.W.weight, 0)
-            nn.init.constant_(self.W.bias, 0)
+            # nn.init.constant_(self.W.bias, 0)
 
         self.theta = nn.Conv2d(in_channels=self.in_channels,
                                out_channels=self.inter_channels,
-                              kernel_size=1, stride=1, padding=0)
+                              kernel_size=1, stride=1, padding=0, bias=False)
         self.phi = nn.Conv2d(in_channels=self.in_channels,
                               out_channels=self.inter_channels,
-                              kernel_size=1, stride=1, padding=0)
+                              kernel_size=1, stride=1, padding=0, bias=False)
 
     def forward(self, x):
         '''
@@ -131,17 +131,17 @@ class PairGraph(nn.Module):
 
         self.y = nn.Conv2d(in_channels=self.in_channels,
                          out_channels=self.inter_channels,
-                         kernel_size=1, stride=1, padding=0)
+                         kernel_size=1, stride=1, padding=0, bias=False)
 
         self.g = nn.Conv2d(in_channels=self.in_channels,
                                out_channels=self.inter_channels,
-                              kernel_size=1, stride=1, padding=0)
+                              kernel_size=1, stride=1, padding=0, bias=False)
         self.o = nn.Conv2d(in_channels=self.inter_channels,
                               out_channels=self.in_channels,
-                              kernel_size=1, stride=1, padding=0)
+                              kernel_size=1, stride=1, padding=0, bias=False)
 
         nn.init.constant_(self.o.weight, 0)
-        nn.init.constant_(self.o.bias, 0)
+        # nn.init.constant_(self.o.bias, 0)
 
         self.relu = nn.ReLU(inplace=True)
 
