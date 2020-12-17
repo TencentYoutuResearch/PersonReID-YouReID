@@ -12,7 +12,7 @@ Devil's in the Details: Aligning Visual Clues for Conditional Embedding in Perso
 ```yaml
 yaml: 'experiment/cacenet/cacenet.yaml'
 ```
-
+This is our tensorflow implement [tf-cacenet](waited)
 
 ## Citation
 If you find this code useful, please cite the following paper:

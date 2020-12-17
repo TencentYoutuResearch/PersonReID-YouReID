@@ -24,20 +24,11 @@ class Config(object):
 
     def default_config(self):
         return {
-            'root_path': '/data1/home/fufuyu/checkpoint/',
-            'save_max_to_keep': 2,
-            'print_freq': 10,
             'seed': 1234,
-            'use_fp16': False,
-            'fp16_config': {
-                'level': 'O1', #混合精度训练
-                'keep_batchnorm_fp32': None,
-                'loss_scale': None
-            }
         }
 
-    def get(self, attr):
-        default = self._default_config.get(attr, None)
+    def get(self, attr, default=None):
+        default = self._default_config.get(attr, default)
         return self._config.get(attr, default)
 
 parser = argparse.ArgumentParser(description='PyTorch Training')

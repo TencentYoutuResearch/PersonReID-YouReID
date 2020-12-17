@@ -2,8 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
-import torch.distributed as dist
-
 
 def normalize(x, axis=-1):
     """Normalizing to unit length along the specified dimension.

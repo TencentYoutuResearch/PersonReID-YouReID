@@ -15,14 +15,8 @@ this project provides the following algorithms and scripts to run them. Please s
 
 Please install `Python>=3.6` and `PyTorch>=1.6.0`. 
 
-## Geting Started
-
-#### Clone this github repository:
-```
-git clone 
-```
 #### Prepare Datasets
-Download the public datasets(like market1501 and DukeMTMC), organize these dataset using the following format:
+Download the public datasets(like market1501 and DukeMTMC), organize these datasets using the following format:
 
 File Directory:
 ├── partitions.pkl
@@ -44,11 +38,19 @@ This file contains a python dictionary storing meta data of the datasets, which 
 "test_im_names": [list of image names] #storing a list of names of testing images
 "test_marks"/"val_marks": [list of 0/1] #0/1 indicates if an image is in gallery
 
+## Geting Started
+
+#### Clone this github repository:
+```
+git clone 
+```
+
 #### train
 1. Configure basic settings in core/config
 2. Define the network in net and register in the factory.py
-3. Set the corresponding hyperparameters in the experiment yaml
-4. set experiment.yaml path in config.yaml
+3. Set the corresponding hyperparameters in the example yaml
+4. set example.yaml path in config.yaml  
+5. set port and gpu config in cmd.sh
 5. cd train && ./cmd.sh
 
 ###### Quickly Started

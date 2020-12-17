@@ -6,6 +6,7 @@ import copy
 import random
 import torch.distributed as dist
 from torch.utils.data.sampler import Sampler, RandomSampler
+
 class RandomIdentitySampler(Sampler):
     """Randomly samples N identities each with K instances.
 
