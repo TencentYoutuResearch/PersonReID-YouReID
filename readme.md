@@ -13,6 +13,7 @@ this project provides the following algorithms and scripts to run them. Please s
       <th>Algorithms</th>
       <th>Description</th>
       <th>Status</th>
+    </tr>
     <tr> <!-- (1-st row) -->
     <td align="center" valign="middle"> CACENET </td>
     <td align="center" valign="middle"> <a href="https://arxiv.org/abs/2009.05250">Devil's in the Details: Aligning Visual Clues for Conditional Embedding in Person Re-Identification</a> </td>
@@ -65,7 +66,7 @@ This file contains a python dictionary storing meta data of the datasets, which 
 2. Define the network in net and register in the factory.py
 3. Set the corresponding hyperparameters in the experiment yaml
 4. set experiment.yaml path in config.yaml
-5  cd train && ./cmd.sh
+5. cd train && ./cmd.sh
 
 #### Quickly Started
 
