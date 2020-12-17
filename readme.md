@@ -8,7 +8,7 @@ this project provides the following algorithms and scripts to run them. Please s
 
 <table>
  <tbody>
-    <tr align="center" valign="bottom">
+    <tr align="center" valign="middle">
       <th>ABBRV</th>
       <th>Algorithms</th>
       <th>Description</th>
