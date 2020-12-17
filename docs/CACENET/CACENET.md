@@ -12,7 +12,8 @@ Devil's in the Details: Aligning Visual Clues for Conditional Embedding in Perso
 ```yaml
 yaml: 'experiment/cacenet/cacenet.yaml'
 ```
-||Market<br>mAP&rank-1</br>|Duke<br>mAP&rank-1</br>|download|
+---
+||Market1501<br>mAP&rank-1</br>|DukeMTMC<br>mAP&rank-1</br>|download|
 |:-:|:-:|:-:|:-:|
 |paper|90.3/95.96|81.29/90.89|-|
 |this implement|89.95/96.02|-|[weight]() [log]() |
