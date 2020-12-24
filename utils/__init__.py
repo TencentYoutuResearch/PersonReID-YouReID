@@ -22,7 +22,7 @@ def mkdir_if_missing(dirname):
                 raise
 
 
-def save_checkpoint(state, root='../../snapshot/'):
+def save_checkpoint(state, root='../../snapshot/', flag='checkpoint.pth'):
 
     # path = os.path.join(root, str(code))
     if not os.path.exists(root):
@@ -30,7 +30,7 @@ def save_checkpoint(state, root='../../snapshot/'):
 
     # if (state['epoch'] % 10) == 0:
     #     torch.save(state, path + '/' + str(state['epoch']) + '.pth')
-    filename = os.path.join(root, 'checkpoint.pth')
+    filename = os.path.join(root, flag)
     torch.save(state, filename)
     print('Save checkpoint at %s' % filename)
     # if is_best:

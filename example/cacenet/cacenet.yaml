@@ -3,8 +3,8 @@ dataset_config:
   train_class: FormatData #Market1501 #Occluded_Duke #Market1501 PartialOrOccluded
   test_class: FormatData #FormatData
   root: /raid/home/fufuyu/dataset
-  train_name : market1501
-  test_name : market1501 #msmt17_pcb  #market1501 Duke_pcb msmt17_pcb cuhk03_pcb
+  train_name : msmt17_pcb
+  test_name : msmt17_pcb #msmt17_pcb  #market1501 Duke_pcb msmt17_pcb cuhk03_pcb
   part: train
   height: 384 #384
   width: 128
@@ -36,7 +36,7 @@ model_config:
   alpha: 0.9
 #  split_bn: true
   use_non_local: true
-#  pool_type: gemm
+  pool_type: gemm
 
 with_flip: true
 

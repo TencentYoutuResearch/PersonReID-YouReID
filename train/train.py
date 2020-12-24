@@ -65,14 +65,14 @@ def bulid_dataset():
                                               **params
                                             ),
                 batch_size=cfg['batch_size'], shuffle=False, num_workers=cfg['workers'], pin_memory=True),
-        'train':
-            torch.utils.data.DataLoader(
-                dataset.__dict__[cfg['test_class']](root=cfg['root'], dataname=cfg['test_name'], part='train',
-                                                    require_path=True, size=(cfg['height'], cfg['width']),
-                                                    least_image_per_class=cfg['least_image_per_class'],
-                                                    **params
-                                                    ),
-                batch_size=cfg['batch_size'], shuffle=False, num_workers=cfg['workers'], pin_memory=True),
+        # 'train':
+        #     torch.utils.data.DataLoader(
+        #         dataset.__dict__[cfg['test_class']](root=cfg['root'], dataname=cfg['test_name'], part='train',
+        #                                             require_path=True, size=(cfg['height'], cfg['width']),
+        #                                             least_image_per_class=cfg['least_image_per_class'],
+        #                                             **params
+        #                                             ),
+        #         batch_size=cfg['batch_size'], shuffle=False, num_workers=cfg['workers'], pin_memory=True),
     }
 
     return train_loader, test_loader
@@ -125,7 +125,7 @@ def main():
 
     if config.get('eval'):
         # config['use_fp16'] = False
-        ckpt = os.path.join(config.get('task_id'), 'checkpoint.pth')
+        ckpt = os.path.join(config.get('task_id'), 'best_model.pth')
         checkpoint = torch.load(ckpt)
         keys = list(checkpoint['state_dict'].keys())
         for k in keys:
@@ -190,6 +190,7 @@ def main():
 
     optimizer.step()
     start = time.time()
+    mAP, rank_1 = 0, 0
     for epoch in range(start_epoch, ocfg.get('epochs')):
         # train for one epoch
         train_loader.sampler.set_epoch(epoch)
@@ -204,6 +205,21 @@ def main():
                 'optimizer': optimizer.state_dict(),
             }, root=config.get('task_id'))
 
+            if ocfg.get('epochs') - 10 <= epoch <= ocfg.get('epochs'):
+                extract(test_loader, model)
+                cur_mAP, cur_rank_1 = evaluate.eval_result(config.get('dataset_config')['test_name'],
+                                                           root=config.get('task_id'),
+                                                           use_pcb_format=True,
+                                                           logger=logger
+                                                           )
+                if cur_mAP > mAP:
+                    mAP, rank_1 = cur_mAP, cur_rank_1
+                    save_checkpoint({
+                        'epoch': epoch + 1,
+                        'state_dict': model.state_dict(),
+                        'optimizer': optimizer.state_dict(),
+                    }, root=config.get('task_id'), flag='best_model.pth')
+
     end = time.time()
     cost = end - start
     cost_h = cost // 3600
@@ -211,13 +227,13 @@ def main():
     cost_s = cost - cost_h * 3600 - cost_m * 60
     logger.write('cost time: %d H %d M %d s' % (cost_h, cost_m, cost_s))
         #
-    if int(os.environ['RANK']) == 0:
-        extract(test_loader, model)
-        evaluate.eval_result(config.get('dataset_config')['test_name'],
-                         root=config.get('task_id'),
-                         use_pcb_format=True,
-                         logger=logger
-                         )
+    # if int(os.environ['RANK']) == 0:
+    #     extract(test_loader, model)
+    #     evaluate.eval_result(config.get('dataset_config')['test_name'],
+    #                      root=config.get('task_id'),
+    #                      use_pcb_format=True,
+    #                      logger=logger
+    #                      )
 
 
 def train(scaler, train_loader, model, optimizer, lr_scheduler, epoch):

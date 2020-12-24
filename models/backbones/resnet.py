@@ -152,7 +152,7 @@ class ResNet(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, 64, layers[0])
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=2, use_non_local=use_non_local)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2, use_non_local=use_non_local)
         self.layer4 = self._make_layer(block, 512, layers[3],
                                        stride=last_stride, use_non_local=use_non_local)
@@ -173,7 +173,8 @@ class ResNet(nn.Module):
                             downsample, self.groups, self.base_width))
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
-            use_non_local_flag = use_non_local and i == blocks - 2
+            min_stop = max(blocks - 4, 0)
+            use_non_local_flag = use_non_local and i == blocks - 2 #min_stop < i <= (blocks - 2)
             layers.append(block(self.inplanes, planes,
                                 groups=self.groups,
                                 base_width=self.base_width,

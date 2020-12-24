@@ -35,6 +35,8 @@ model_config:
   loss_type: ['softmax', 'soft_triplet', 'labelsmooth'] #'softmax', 'triplet', 'labelsmooth', 'arcface'
   margin: 0.5
   split_bn: true
+#  pool_type: gemm
+#  reduce_dim: 256
 #  pool_type: norm
 
 

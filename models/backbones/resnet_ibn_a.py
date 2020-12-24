@@ -231,7 +231,7 @@ def resnet101_ibn_a(pretrained=False, last_stride=1, **kwargs):
         for k in state_dict['state_dict']:
             new_k = k.replace('module.', '')
             new_state_dict[new_k] = state_dict['state_dict'][k]
-        model.load_state_dict(new_state_dict, strict=True)
+        model.load_state_dict(new_state_dict, strict=False)
     return model
 
 

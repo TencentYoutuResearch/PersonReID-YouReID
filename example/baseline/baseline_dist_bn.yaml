@@ -36,7 +36,7 @@ model_config:
   margin: 0.5
   split_bn: true
 #  use_non_local: true
-  pool_type: gemm
+
 
 
 

@@ -57,7 +57,7 @@ class CACENET(nn.Module):
                                            nn.Linear(reduce_dim, num_classes, bias=False))
         self._init_fc(self.pair_fc_layer)
 
-        # self.ce_loss = CrossEntropyLabelSmooth(num_classes)
+        self.ce_loss_ls = CrossEntropyLabelSmooth(num_classes)
         self.ce_loss = nn.CrossEntropyLoss()  # .cuda()
 
         self.tri_loss = TripletLoss(margin, normalize_feature=True) #.cuda()
@@ -132,7 +132,7 @@ class CACENET(nn.Module):
         f, f_0, f_1, logit, logit_0, logit_1 = output
         cls_losses, tri_losses = [], []
         # logit = self.fc_layer(f)
-        loss = self.ce_loss(logit, target)
+        loss = self.ce_loss_ls(logit, target)
         cls_losses.append(loss)
 
         target_0, target_1 = self.get_pair_label(target)

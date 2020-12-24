@@ -183,6 +183,7 @@ def main():
 
     optimizer.step()
     start = time.time()
+    mAP, rank_1 =0, 0
     for epoch in range(start_epoch, ocfg.get('epochs')):
         # train for one epoch
         train(scaler, train_loader, model, optimizer, lr_scheduler, epoch)
@@ -195,6 +196,23 @@ def main():
             'optimizer': optimizer.state_dict(),
         }, root=config.get('task_id'))
 
+        if ocfg.get('epochs') -10 <= epoch <= ocfg.get('epochs'):
+            extract(test_loader, model)
+            cur_mAP, cur_rank_1 = evaluate.eval_result(config.get('dataset_config')['test_name'],
+                                 root=config.get('task_id'),
+                                 use_pcb_format=True,
+                                 logger=logger
+                                 )
+            if cur_mAP > mAP:
+                mAP, rank_1 = cur_mAP, cur_rank_1
+                save_checkpoint({
+                    'epoch': epoch + 1,
+                    'state_dict': model.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                }, root=config.get('task_id'), flag='best_model.pth'
+                )
+
+
     end = time.time()
     cost = end - start
     cost_h = cost // 3600
@@ -202,12 +220,12 @@ def main():
     cost_s = cost - cost_h * 3600 - cost_m * 60
     logger.write('cost time: %d H %d M %d s' % (cost_h, cost_m, cost_s))
         #
-    extract(test_loader, model)
-    evaluate.eval_result(config.get('dataset_config')['test_name'],
-                         root=config.get('task_id'),
-                         use_pcb_format=True,
-                         logger=logger
-                         )
+    # extract(test_loader, model)
+    # evaluate.eval_result(config.get('dataset_config')['test_name'],
+    #                      root=config.get('task_id'),
+    #                      use_pcb_format=True,
+    #                      logger=logger
+    #                      )
 
 
 def train(scaler, train_loader, model, optimizer, lr_scheduler, epoch):
@@ -453,7 +471,7 @@ def extract(test_data, model):
                     feat = normalize(outputs, axis=1)
                 #
                 if config.get('with_flip'):
-                    # print('with flip')
+                    # print('with flip', config.get('with_flip'))
                     input_ = input.flip(3)
                     outputs = model(input_)
                     if isinstance(outputs, (list, tuple)):

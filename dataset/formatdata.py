@@ -136,7 +136,7 @@ class FormatData(data.Dataset):
             for im_name, test_mark in zip(img_list, test_marks):
                 if test_mark == 0:
                     q_list.append((os.path.join(self.root, 'images', im_name), 0, 0))
-                else:
+                elif test_mark == 1:
                     g_list.append((os.path.join(self.root, 'images', im_name), 0, 0))
             if part == 'query':
                 imgs = q_list

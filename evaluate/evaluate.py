@@ -70,6 +70,8 @@ def eval_result(data, root, use_metric_cuhk03=False,
                 logger.write('  top-{:<4}{:12.2%}'
                       .format(k,cmc_scores[k - 1]))
 
+    return mAP, cmc_scores[0]
+
 
 def eval_result_mask(data, root, use_metric_cuhk03=False,
                 use_rerank=False, use_pcb_format=True):
