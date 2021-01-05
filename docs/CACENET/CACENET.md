@@ -17,7 +17,7 @@ yaml: 'experiment/cacenet/cacenet.yaml'
 |:-:|:-:|:-:|:-:|
 |paper|90.3/95.96|81.29/90.89|-|
 |this implement|89.95/96.02|-|[weight]() [log]() |
-This is our tensorflow implement [tf-cacenet](waited)
+
 
 ## Citation
 If you find this code useful, please cite the following paper:
