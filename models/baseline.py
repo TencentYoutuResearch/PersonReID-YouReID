@@ -68,13 +68,10 @@ class Baseline(nn.Module):
             else:
                 self.ce_loss = nn.CrossEntropyLoss()  # .cuda()
         if 'triplet' in self.loss_type:
-            self.tri_loss = TripletLoss(margin, normalize_feature=not 'circle' in self.loss_type) #.cuda()
+            self.tri_loss = TripletLoss(margin, normalize_feature=not 'circle' in self.loss_type)
         if 'soft_triplet' in self.loss_type:
-            self.tri_loss = SoftTripletLoss(margin, normalize_feature=not 'circle' in self.loss_type) #.cuda()
-        if 'div_triplet' in self.loss_type:
-            self.tri_loss = DivTripletLoss(margin, normalize_feature=not 'circle' in self.loss_type) #.cuda()
-        if 'multisimilarity' in self.loss_type:
-            self.tri_loss = MultiSimilarityLoss()
+            self.tri_loss = SoftTripletLoss(margin, normalize_feature=not 'circle' in self.loss_type)
+
     @staticmethod
     def _init_bn(bn):
         nn.init.constant_(bn[0].weight, 1.)
@@ -116,15 +113,16 @@ class Baseline(nn.Module):
 
     def compute_loss(self, output, target):
         ce_logit, tri_logit = output
-        cls_losses, tri_losses = [], []
+        losses, losses_names = [], []
         if 'softmax' in self.loss_type or 'arcface' in self.loss_type:
             cls_loss = self.ce_loss(ce_logit[0], target)
-            cls_losses.append(cls_loss)
-        if 'triplet' in self.loss_type or 'soft_triplet' in self.loss_type or 'div_triplet' in self.loss_type  \
-                or 'multisimilarity' in self.loss_type:
+            losses.append(cls_loss)
+            losses_names.append('cls_loss')
+        if len(set(['triplet',  'soft_triplet']) & set(self.loss_type)) == 1:
             tri_loss = self.tri_loss(tri_logit[0], target)
-            tri_losses.append(tri_loss)
-        return cls_losses, tri_losses
+            losses.append(tri_loss)
+            losses_names.append('tri_loss')
+        return losses, losses_names
 
 
 

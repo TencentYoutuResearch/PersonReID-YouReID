@@ -1,5 +1,4 @@
 import torch
-import scipy.spatial.distance as distance
 
 def cosine(query, gallery):
     query = torch.from_numpy(query)

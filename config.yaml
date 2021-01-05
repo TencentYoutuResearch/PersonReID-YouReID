@@ -1,5 +1,5 @@
-gpus: [2,3]
-yaml: ../example/baseline/baseline_large_multidataset.yaml #mgn  baseline_dist_bn   #mgn_dist_bn_multidataset
-task_id: ../../snapshot/distribute/baseline_resnet101_ibn_b128_mdmc_mix_gemm_nl_2 #mgn_fp16 baseline_resnet101_ibn_b128_mdmc_mix_soft_triplet   #mgn_v2_resnet_wo_ls
-eval: true
+gpus: [0,1]
+yaml: ../example/baseline/baseline_dist_bn.yaml #mgn  baseline_dist_bn   #mgn_dist_bn_multidataset
+task_id: ../../snapshot/distribute/baseline_distribute_orgnize #mgn_fp16 baseline_resnet101_ibn_b128_mdmc_mix_soft_triplet   #mgn_v2_resnet_wo_ls
+eval: false
 convert_to_onnx: false

@@ -78,6 +78,14 @@ def bulid_dataset():
                                                   **params
                                                 ),
                     batch_size=cfg['batch_size'], shuffle=False, num_workers=cfg['workers'], pin_memory=True),
+            'train':
+                torch.utils.data.DataLoader(
+                    dataset.__dict__[cfg['test_class']](root=cfg['root'], dataname=cfg['test_name'], part='train',
+                                                        require_path=True, size=(cfg['height'], cfg['width']),
+                                                        least_image_per_class=cfg['least_image_per_class'],
+                                                        **params
+                                                        ),
+                    batch_size=cfg['batch_size'], shuffle=False, num_workers=cfg['workers'], pin_memory=True),
         }
 
     return train_loader, test_loader
@@ -424,7 +432,10 @@ def train(scaler, train_loader, model, optimizer, lr_scheduler, epoch):
             output = model(input)
             ce_losses, tri_losses = model.module.compute_loss(output, target)
             ce_loss = torch.sum(torch.stack(ce_losses, dim=0))
-            tri_loss = torch.sum(torch.stack(tri_losses, dim=0))
+            if tri_losses:
+                tri_loss = torch.sum(torch.stack(tri_losses, dim=0))
+            else:
+                tri_loss = 0.
             loss = ce_loss + tri_loss  # args.weight*
 
         scaler.scale(loss).backward()

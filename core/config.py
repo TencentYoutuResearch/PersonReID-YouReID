@@ -25,6 +25,7 @@ class Config(object):
     def default_config(self):
         return {
             'seed': 1234,
+            'print_freq': 10
         }
 
     def get(self, attr, default=None):

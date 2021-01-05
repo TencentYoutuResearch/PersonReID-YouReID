@@ -38,12 +38,13 @@ def write_json(obj, fpath):
         json.dump(obj, f, indent=4, separators=(',', ': '))
 
 
-def save_checkpoint(state, is_best=False, fpath='checkpoint.pth.tar'):
-    if len(osp.dirname(fpath)) != 0:
-        mkdir_if_missing(osp.dirname(fpath))
-    torch.save(state, fpath)
-    if is_best:
-        shutil.copy(fpath, osp.join(osp.dirname(fpath), 'best_model.pth.tar'))
+def save_checkpoint(state, root='../../snapshot/', flag='checkpoint.pth'):
+
+    if not os.path.exists(root):
+        os.makedirs(root)
+    filename = os.path.join(root, flag)
+    torch.save(state, filename)
+    print('Save checkpoint at %s' % filename)
 
 
 IMG_EXTENSIONS = [

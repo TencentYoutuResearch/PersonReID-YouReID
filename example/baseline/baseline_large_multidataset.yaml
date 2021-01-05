@@ -37,8 +37,6 @@ model_config:
   split_bn: true
   use_non_local: true
   pool_type: gemm
-#  reduce_dim: 256
-#  pool_type: norm
 
 
 

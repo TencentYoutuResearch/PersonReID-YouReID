@@ -1,6 +1,6 @@
-# YoutuReID
+# you-reid
 
-YoutuReID is a research framework that implements state-of-the art person re-identification algorithms
+you-reid is a research framework that implements state-of-the art person re-identification algorithms
 
 
 ## Models
@@ -13,7 +13,7 @@ this project provides the following algorithms and scripts to run them. Please s
 
 You also can find these models in [model_zoo](docs/model_zoo.md)
 
-## Requirements and Preparation~~~~
+## Requirements and Preparation
 Please install `Python>=3.6` and `PyTorch>=1.6.0`. 
 
 #### Prepare Datasets

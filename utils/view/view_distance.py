@@ -2,11 +2,20 @@ import numpy as np
 from  scipy import io
 import os
 import matplotlib.pyplot as plt
+import torch
 import seaborn as sns
 
 def compute_distance(matrix_a, matrix_b, type='cosine'):
     if type == 'cosine':
         return np.matmul(matrix_a, matrix_b.T)
+
+def compute_distance_by_torch(matrix_a, matrix_b, type='cosine'):
+    if type == 'cosine':
+        if not isinstance(matrix_a, torch.Tensor):
+            matrix_a = torch.from_numpy(matrix_a)
+        if not isinstance(matrix_b, torch.Tensor):
+            matrix_b = torch.from_numpy(matrix_b)
+        return torch.matmul(matrix_a, matrix_b.t())
 
 def test(root, data):
     gallery = os.path.join(root, data + '_gallery.mat')
@@ -69,7 +78,44 @@ def test(root, data):
     plt.show()
 
 
+def view_train(root, data):
+    trainmatpath = os.path.join(root, data + '_train.mat')
+    trainmat = io.loadmat(trainmatpath)
+
+    dist = compute_distance(trainmat['feature'], trainmat['feature'])
+    path = trainmat['path']
+    label = trainmat['label'].squeeze()
+
+    centers = {}
+    for i in range(label.shape[0]):
+        if label[i] not in centers:
+            centers[label[i]] = [[trainmat['feature'][i]], [path[i]]]
+        else:
+            centers[label[i]][0].append(trainmat['feature'][i])
+            centers[label[i]][1].append(path[i])
+
+    c_dises, q_dises = [], []
+    for j in centers:
+        feas = centers[j][0]
+        feas = np.stack(feas)
+        cent = feas.mean(axis=0)
+        cent /= np.linalg.norm(cent, ord=2)
+        centers[j].append(cent)
+        c_dis = compute_distance(feas, np.expand_dims(cent, axis=0))
+        centers[j].append(c_dis.squeeze())
+        c_dises.extend(c_dis.squeeze().tolist())
+        q_dis = compute_distance(feas, feas)
+        for k in range(q_dis.shape[0]):
+            for l in range(0, k):
+                q_dises.append(q_dis[k, l])
+
+
+
+    plt.hist(q_dises, label='c_dises', bins=200)
+    plt.legend(loc='upper right')
+    plt.show()
+
 
 
 if __name__ == '__main__':
-    test('/raid/home/fufuyu/snapshot/distribute/baseline_l8_b160_5x32_2', 'market1501')
+    view_train('/raid/home/fufuyu/snapshot/distribute/baseline_distribute_2', 'market1501')
