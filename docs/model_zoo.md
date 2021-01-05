@@ -8,7 +8,7 @@ This file documents collection of models trained with you-reid framework. All nu
 
 ||Market1501<br>mAP&rank-1</br>|DukeMTMC<br>mAP&rank-1</br>|MSMT17<br>mAP&rank-1</br>|config|download|
 |:-:|:-:|:-:|:-:|:-:|
-|baseline|87.65/94.80｜77.21/88.33｜-｜[config](../example/baseline/baseline_dist_bn.yaml)|[weight]() [log]()|
+|baseline|87.65/94.80|77.21/88.33|-|[config](../example/baseline/baseline_dist_bn.yaml)|[weight]() [log]()|
 
 
 #### multi sources
