@@ -19,76 +19,14 @@ from utils.iotools import read_image, is_image_file
 import numpy as np
 from copy import deepcopy
 import pickle
+from .formatdata import FormatData
 
-def find_classes(config):
-    with open(config, 'r') as f:
-        lines = f.readlines()
-    lines.sort()
-    classes = []
-
-    for line in lines:
-        filename, cls = line.strip().split(' ')
-        if cls not in classes:
-            classes.append(cls)
-
-    class_to_idx = {classes[i]: i for i in range(len(classes))}
-    return classes, class_to_idx
-
-
-def make_dataset(root, config, class_to_idx, classes):
-
-    with open(config, 'r') as f:
-        lines = f.readlines()
-    lines.sort()
-    images = []
-
-
-    for line in lines:
-        filename, c = line.strip().split(' ')
-        if is_image_file(filename):
-            path = os.path.join(root, filename)
-            # print(filename)
-            if c in classes:
-                item = (path, class_to_idx[c], 0)
-                images.append(item)
-
-
-    return images
-
-def make_gallery(root):
-    images = [d for d in os.listdir(root)]
-    imgs = []
-
-    for i in images:
-        path = os.path.join(root, i)
-        # print(filename)
-
-        item = (path, 0, 0)
-        imgs.append(item)
-
-    return imgs
-
-def make_query(root, config):
-    with open(config, 'r') as f:
-        lines = f.readlines()
-    images = []
-
-    for line in lines:
-        filename, c = line.strip().split(' ')
-
-        path = os.path.join(root, filename)
-
-        item = (path, int(c), 0)
-        images.append(item)
-
-
-    return images
-
-class Occluded_Duke(data.Dataset):
+class Occluded_Duke(FormatData):
     def __init__(self, root='/data1/home/fufuyu/dataset/Occluded_Duke', part='train',
                  loader=read_image, require_path=False, size=(384,128),
                  least_image_per_class=4, mgn_style_aug=False,
                  load_img_to_cash=False, default_transforms=None, **kwargs):
+
 
         self.root = root
         self.part = part
@@ -188,29 +126,6 @@ class Occluded_Duke(data.Dataset):
         print('  *****************************************')
         print('\n')
 
-    def _postprocess(self, imgs, least_image_per_class=4):
-        image_dict = {}
-        for _, c ,i in imgs:
-            if c not in image_dict:
-                image_dict[c] = 1
-            else:
-                image_dict[c] += 1
-
-        temp = deepcopy(image_dict)
-
-        for k,v in temp.items():
-            if v < least_image_per_class:
-                image_dict.pop(k)
-
-
-        new_class_to_idx = {k: i for i, k in enumerate(list(image_dict.keys()))}
-
-        new_imgs = []
-        for path, c ,i in imgs:
-            if c in new_class_to_idx:
-                new_imgs.append((path, new_class_to_idx[c], 0))
-        classes = list(range(len(new_class_to_idx)))
-        return classes, new_imgs
 
 
     def parse_im_name(self, im_name, parse_type='id'):

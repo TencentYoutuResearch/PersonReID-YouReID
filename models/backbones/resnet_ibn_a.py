@@ -8,7 +8,8 @@ import torch.nn as nn
 import math
 import torch.utils.model_zoo as model_zoo
 from collections import OrderedDict
-from core.layers import NonLocal
+from core.layers import NonLocal, IBN
+from .resnet import Bottleneck
 import os
 
 __all__ = ['ResNet', 'resnet50_ibn_a', 'resnet101_ibn_a',
@@ -61,71 +62,6 @@ class BasicBlock(nn.Module):
         return out
 
 
-class IBN(nn.Module):
-    def __init__(self, planes):
-        super(IBN, self).__init__()
-        half1 = int(planes / 2)
-        self.half = half1
-        half2 = planes - half1
-        self.IN = nn.InstanceNorm2d(half1, affine=True)
-        self.BN = nn.BatchNorm2d(half2)
-
-    def forward(self, x):
-        split = torch.split(x, self.half, 1)
-        out1 = self.IN(split[0].contiguous())
-        out2 = self.BN(split[1].contiguous())
-        out = torch.cat((out1, out2), 1)
-        return out
-
-
-class Bottleneck(nn.Module):
-    expansion = 4
-
-    def __init__(self, inplanes, planes, ibn=False, stride=1, downsample=None, use_non_local=False):
-        super(Bottleneck, self).__init__()
-        self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
-        if ibn:
-            self.bn1 = IBN(planes)
-        else:
-            self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
-                               padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(planes)
-        self.conv3 = nn.Conv2d(planes, planes * self.expansion, kernel_size=1, bias=False)
-        self.bn3 = nn.BatchNorm2d(planes * self.expansion)
-        self.relu = nn.ReLU(inplace=True)
-        self.downsample = downsample
-        self.stride = stride
-
-        self.use_non_local = use_non_local
-        if self.use_non_local:
-            self.non_local_block = NonLocal(planes * self.expansion,
-                                            planes * self.expansion // 16)
-
-    def forward(self, x):
-        residual = x
-
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
-
-        out = self.conv2(out)
-        out = self.bn2(out)
-        out = self.relu(out)
-
-        out = self.conv3(out)
-        out = self.bn3(out)
-
-        if self.downsample is not None:
-            residual = self.downsample(x)
-
-        out += residual
-        out = self.relu(out)
-
-        if self.use_non_local:
-            out = self.non_local_block(out)
-
-        return out
 
 
 class ResNet(nn.Module):

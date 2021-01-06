@@ -12,41 +12,7 @@ sys.path.append("..")
 from utils.iotools import read_image, is_image_file
 
 import numpy as np
-
-
-
-def make_dataset(root, config, class_to_idx, classes):
-
-    with open(config, 'r') as f:
-        lines = f.readlines()
-    lines.sort()
-    images = []
-
-
-    for line in lines:
-        filename, c = line.strip().split(' ')
-        if is_image_file(filename):
-            path = os.path.join(root, filename)
-            # print(filename)
-            if c in classes:
-                item = (path, class_to_idx[c], 0)
-                images.append(item)
-
-
-    return images
-
-def make_gallery(root):
-    images = [d for d in os.listdir(root)]
-    imgs = []
-
-    for i in images:
-        if not i.endswith('jpg'):
-            continue
-        path = os.path.join(root, i)
-        item = (path, 0, 0)
-        imgs.append(item)
-
-    return imgs
+from .formatdata import make_gallery
 
 
 class TestData(data.Dataset):

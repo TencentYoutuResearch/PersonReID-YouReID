@@ -1,8 +1,6 @@
 from .resnet import resnet50, resnet101, resnext101_32x8d
 from .resnest import resnest50, resnest101, resnest200, resnest269
 from .resnet_ibn_a import resnet50_ibn_a, resnet101_ibn_a
-from .resnet_bcn import resnet50_bcn, resnet101_bcn
-from .se_resnet_ibn_a import se_resnet101_ibn_a
 from .resnext_ibn import resnext101_ibn_a
 
 model_zoo = {
@@ -15,8 +13,5 @@ model_zoo = {
     'resnest269': resnest269,
     'resnet50_ibn_a': resnet50_ibn_a,
     'resnet101_ibn_a': resnet101_ibn_a,
-    'resnet50_bcn': resnet50_bcn,
-    'resnet101_bcn': resnet101_bcn,
-    'se_resnet101_ibn_a': se_resnet101_ibn_a,
     'resnext101_ibn_a': resnext101_ibn_a
 }

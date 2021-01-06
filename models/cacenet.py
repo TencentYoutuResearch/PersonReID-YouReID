@@ -90,18 +90,12 @@ class CACENET(nn.Module):
         return x1, x2
 
     def head(self, x):
-        if self.pool_type == 'baseline':
+        if self.pool_type == 'gemm':
+            x = self.gemp(x)
+        elif self.pool_type == 'baseline':
             x1 = self.gap(x)
             x2 = self.gmp(x)
             x = torch.cat([x1, x2], 1)
-        elif self.pool_type == 'gemm':
-            x = self.gemp(x)
-        elif self.pool_type == 'norm':
-            # norm = torch.norm(x, 2, 1, keepdim=True)
-            b, c, h, w = x.size()
-            score = torch.softmax(x.view((b, c, h*w)), dim=-1)
-            score = score.view((b, c, h, w))
-            x = torch.sum(x * score, dim=[2, 3], keepdim=True)
 
         x = self.embedding_layer(x)
         x = x.squeeze(dim=3).squeeze(dim=2)
