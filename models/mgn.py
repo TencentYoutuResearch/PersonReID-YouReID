@@ -2,7 +2,6 @@ import copy
 import torch
 from torch import nn
 from .backbones import model_zoo
-import math
 from core.loss import *
 
 class MGN(nn.Module):
@@ -19,12 +18,12 @@ class MGN(nn.Module):
         self.stripes = stripes
         self.margin = margin
         self.loss_type= loss_type
-        # kwargs = {
-        #     'use_non_local': use_non_local
-        # }
+        kwargs = {
+            'use_non_local': use_non_local
+        }
         resnet = model_zoo[num_layers](
             pretrained=True, last_stride=last_stride,
-            # **kwargs
+            **kwargs
         )
         self.backone = nn.Sequential(
             resnet.conv1,
@@ -118,12 +117,14 @@ class MGN(nn.Module):
 
     def compute_loss(self, output, target):
         ce_logits, tri_logits = output
-        cls_losses, tri_losses = [], []
-        for ce_logit in ce_logits:
+        losses, losses_names = [], []
+        for ce_id, ce_logit in enumerate(ce_logits):
             cls_loss = self.ce_loss(ce_logit, target)
-            cls_losses.append(cls_loss)
-        for tri_logit in tri_logits:
+            losses.append(cls_loss)
+            losses_names.append('cls_%d' % ce_id)
+        for tri_id, tri_logit in enumerate(tri_logits):
             tri_loss = self.tri_loss(tri_logit, target)
-            tri_losses.append(tri_loss)
-        return cls_losses, tri_losses
+            losses.append(tri_loss)
+            losses_names.append('tri_%d' % tri_id)
+        return losses, losses_names
 

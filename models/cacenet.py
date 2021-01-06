@@ -130,10 +130,11 @@ class CACENET(nn.Module):
 
     def compute_loss(self, output, target):
         f, f_0, f_1, logit, logit_0, logit_1 = output
-        cls_losses, tri_losses = [], []
+        losses, losses_names = [], []
         # logit = self.fc_layer(f)
         loss = self.ce_loss_ls(logit, target)
-        cls_losses.append(loss)
+        losses.append(loss)
+        losses_names.append('cls_loss')
 
         target_0, target_1 = self.get_pair_label(target)
 
@@ -141,21 +142,25 @@ class CACENET(nn.Module):
         loss_0_0 = self.ce_loss(logit_0, target_0)
         loss_0_1 = self.ce_loss(logit_0, target_1)
         loss_0 = self.alpha * loss_0_0 + (1- self.alpha) * loss_0_1
-        cls_losses.append(loss_0)
+        losses.append(loss_0)
+        losses_names.append('mixup_loss_0')
 
         # logit_1 = self.pair_fc_layers[1](f_1)
         loss_1_0 = self.ce_loss(logit_1, target_1)
         loss_1_1 = self.ce_loss(logit_1, target_0)
         loss_1 = self.alpha * loss_1_0 + (1 - self.alpha) * loss_1_1
-        cls_losses.append(loss_1)
+        losses.append(loss_1)
+        losses_names.append('mixup_loss_1')
 
         tri_loss = self.tri_loss(f, target)
-        tri_losses.append(tri_loss)
+        losses.append(tri_loss)
+        losses_names.append('tri_loss')
 
         pair_tri_loss = self.pair_tri_loss(f_0, f_1, target)
-        tri_losses.append(pair_tri_loss)
+        losses.append(pair_tri_loss)
+        losses_names.append('pair_tri_loss')
 
-        return cls_losses, tri_losses
+        return losses, losses_names
 
 
 

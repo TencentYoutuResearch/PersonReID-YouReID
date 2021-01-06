@@ -1,12 +1,6 @@
-#conding=utf-8
-# @Time  : 2019/12/23 10:57
-# @Author: fufuyu
-# @Email:  fufuyu@tencen.com
-
 from .backbones import model_zoo
 from core.loss import *
 from core.layers import GeneralizedMeanPoolingP
-import numpy as np
 
 class Baseline(nn.Module):
     def __init__(self,
