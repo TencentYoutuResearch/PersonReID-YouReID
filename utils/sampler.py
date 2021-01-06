@@ -42,23 +42,28 @@ class RandomIdentitySampler(Sampler):
                 num = self.num_instances
             self.length += num - num % (0 if self.use_tf_sample else num % self.num_instances)
 
+    def get_batch_idxs_dict(self):
+
+        batch_idxs_dict = defaultdict(list)
+
+        for pid in self.pids:
+            idxs = copy.deepcopy(self.index_dic[pid])
+            if len(idxs) < self.num_instances:
+                idxs = np.random.choice(idxs, size=self.num_instances, replace=True)
+            random.shuffle(idxs)
+            batch_idxs = []
+            for idx in idxs:
+                batch_idxs.append(idx)
+                if len(batch_idxs) == self.num_instances:
+                    batch_idxs_dict[pid].append(batch_idxs)
+                    batch_idxs = []
+
+        return  batch_idxs_dict
+
     def __iter__(self):
 
         if not self.use_tf_sample:
-            batch_idxs_dict = defaultdict(list)
-
-            for pid in self.pids:
-                idxs = copy.deepcopy(self.index_dic[pid])
-                if len(idxs) < self.num_instances:
-                    idxs = np.random.choice(idxs, size=self.num_instances, replace=True)
-                random.shuffle(idxs)
-                batch_idxs = []
-                for idx in idxs:
-                    batch_idxs.append(idx)
-                    if len(batch_idxs) == self.num_instances:
-                        batch_idxs_dict[pid].append(batch_idxs)
-                        batch_idxs = []
-
+            batch_idxs_dict = self.get_batch_idxs_dict()
             avai_pids = copy.deepcopy(self.pids)
             final_idxs = []
             
@@ -135,19 +140,7 @@ class DistributeRandomIdentitySampler(RandomIdentitySampler):
         if self.shuffle:
             np.random.seed(self.epoch + self.seed)
         if not self.use_tf_sample:
-            batch_idxs_dict = defaultdict(list)
-            for pid in self.pids:
-                idxs = copy.deepcopy(self.index_dic[pid])
-                if len(idxs) < self.num_instances:
-                    idxs = np.random.choice(idxs, size=self.num_instances, replace=True)
-                random.shuffle(idxs)
-                # print('aaa')
-                batch_idxs = []
-                for idx in idxs:
-                    batch_idxs.append(idx)
-                    if len(batch_idxs) == self.num_instances:
-                        batch_idxs_dict[pid].append(batch_idxs)
-                        batch_idxs = []
+            batch_idxs_dict = self.get_batch_idxs_dict()
 
             avai_pids = copy.deepcopy(self.pids)
             final_idxs = []
