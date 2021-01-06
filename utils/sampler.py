@@ -40,7 +40,7 @@ class RandomIdentitySampler(Sampler):
             num = len(idxs)
             if num < self.num_instances:
                 num = self.num_instances
-            self.length += num - num % self.num_instances
+            self.length += num - num % (0 if self.use_tf_sample else num % self.num_instances)
 
     def __iter__(self):
 
@@ -102,7 +102,7 @@ class RandomIdentitySampler(Sampler):
         return self.length
 
 
-class DistributeRandomIdentitySampler(Sampler):
+class DistributeRandomIdentitySampler(RandomIdentitySampler):
     """Randomly samples N identities each with K instances.
 
     Args:
@@ -114,16 +114,13 @@ class DistributeRandomIdentitySampler(Sampler):
     def __init__(self, data_source, batch_size, num_instances,
                  use_tf_sample=False, use_all_sample=False, rnd_select_nid=0,
                  shuffle=True, seed=0):
-        if batch_size < num_instances:
-            raise ValueError('batch_size={} must be no less '
-                             'than num_instances={}'.format(batch_size, num_instances))
+        super(DistributeRandomIdentitySampler, self).__init__(data_source=data_source,
+                                                              batch_size=batch_size,
+                                                              num_instances=num_instances,
+                                                              use_tf_sample=use_tf_sample,
+                                                              use_all_sample=use_all_sample,
+                                                              )
 
-        self.data_source = data_source
-        self.batch_size = batch_size
-        self.num_instances = num_instances
-        self.num_pids_per_batch = self.batch_size // self.num_instances
-        self.use_tf_sample = use_tf_sample
-        self.use_all_sample = use_all_sample
         self.rnd_select_nid = rnd_select_nid
 
         self.num_replicas = dist.get_world_size()
@@ -133,20 +130,6 @@ class DistributeRandomIdentitySampler(Sampler):
         self.seed = seed
         self.shuffle = shuffle
 
-        self.index_dic = defaultdict(list)
-        for index, imginfo in enumerate(self.data_source.imgs):
-            self.index_dic[imginfo[1]].append(index)
-        self.pids = list(self.index_dic.keys())
-
-        # estimate number of examples in an epoch
-        # TODO: improve precision
-        self.length = 0
-        for pid in self.pids:
-            idxs = self.index_dic[pid]
-            num = len(idxs)
-            if num < self.num_instances:
-                num = self.num_instances
-            self.length += num - (0 if self.use_tf_sample else num % self.num_instances)
 
     def __iter__(self):
         if self.shuffle:
@@ -158,6 +141,7 @@ class DistributeRandomIdentitySampler(Sampler):
                 if len(idxs) < self.num_instances:
                     idxs = np.random.choice(idxs, size=self.num_instances, replace=True)
                 random.shuffle(idxs)
+                # print('aaa')
                 batch_idxs = []
                 for idx in idxs:
                     batch_idxs.append(idx)

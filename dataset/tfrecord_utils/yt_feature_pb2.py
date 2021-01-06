@@ -188,6 +188,7 @@ _FEATURES_FEATUREENTRY = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
   ],
+  #  print('aaa')
   extensions=[
   ],
   nested_types=[],
