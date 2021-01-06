@@ -1,9 +1,9 @@
 # you-reid
 
-you-reid is a research framework that implements state-of-the art person re-identification algorithms
+you-reid is a research framework that implements some state-of-the art person re-identification algorithms
 
 
-## Models
+## Model Zoo
 this project provides the following algorithms and scripts to run them. Please see the details in the link provided in the description column
 
 <table>
@@ -36,7 +36,7 @@ this project provides the following algorithms and scripts to run them. Please s
 	</tr>
 </table>
 
-
+You also can find these models in [model_zoo](docs/model_zoo.md)
 ## Requirements and Preparation
 Please install `Python>=3.6` and `PyTorch>=1.6.0`. 
 
@@ -67,7 +67,7 @@ This file contains a python dictionary storing meta data of the datasets, which 
 
 #### Clone this github repository:
 ```
-git clone 
+git clone this github repository
 ```
 
 #### train
