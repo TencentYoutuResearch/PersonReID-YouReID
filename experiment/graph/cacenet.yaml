@@ -1,0 +1,56 @@
+total_epcohs: 80
+
+learning_rate:
+  policy: cosine
+  warmup: true
+  lr_base: 0.0125 #0.00625
+  lr_decay: 0.1
+  boundaries: [5]
+  warmup_epoch: 5
+
+weight_decay: 0.0005
+excludes: [global_step]
+height: 384
+
+preprocess_config:
+#  im_mean: [0.486, 0.459, 0.408]
+  im_mean: [0.485, 0.456, 0.406]
+  random_erasing_prob: 0.5
+  do_pad_and_crop: true
+
+model_config:
+  name: cacenet
+  train_mode: true
+  local_conv_out_channels: 768
+  triplet_type: stripe
+  num_layers: 50
+  last_conv_stride: 1
+  dropout_place: after
+  margin: 0.5
+  pooling_types: [avg, max]
+  non_local_type: single
+  compression: 16
+  with_pair_triplet: true
+  alpha: 0.9
+
+num_images_per_id: 4
+#
+data_root: /data1/home/fufuyu/dataset
+data:
+  - name: market1501 #market1501 #market1501
+    num_id: 8
+
+pretrain_root: your_path
+pretrain_task: resnet50
+pretrain_model_step: 0
+
+task_id: cacenet
+
+save_max_to_keep: 2
+log_every_n_steps: 10
+save_every_n_steps: 1000
+
+log_level: info
+
+
+

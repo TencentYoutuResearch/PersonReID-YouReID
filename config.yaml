@@ -1,0 +1,3 @@
+gpus: [0,1]
+yaml: 'experiment/graph/cacenet.yaml'
+
