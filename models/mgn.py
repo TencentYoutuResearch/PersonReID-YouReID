@@ -1,8 +1,9 @@
 import copy
 import torch
 from torch import nn
-from .backbones import model_zoo
 from core.loss import *
+from .backbones import model_zoo
+
 
 class MGN(nn.Module):
     def __init__(self,
@@ -44,7 +45,7 @@ class MGN(nn.Module):
         self._init_fc(fc_layer)
 
         branches = []
-        for stripe_id, stripe in enumerate(stripes):
+        for stripe in stripes:
             embedding_layers = nn.ModuleList([copy.deepcopy(reduction) for _ in range(stripe+1)])
             fc_layers = nn.ModuleList([copy.deepcopy(fc_layer) for _ in range(stripe+1)])
             branches.append(
@@ -127,4 +128,3 @@ class MGN(nn.Module):
             losses.append(tri_loss)
             losses_names.append('tri_%d' % tri_id)
         return losses, losses_names
-

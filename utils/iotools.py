@@ -4,11 +4,9 @@ import os
 import os.path as osp
 import errno
 import json
-import shutil
 from PIL import Image
 import torch
 import numpy as np
-import cv2
 
 def mkdir_if_missing(directory):
     if not osp.exists(directory):

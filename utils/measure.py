@@ -73,11 +73,10 @@ def eval_market1501(distmat, q_pids, g_pids, q_camids, g_camids, max_rank):
     return all_cmc, mAP
 
 
-def evaluate_py(distmat, q_pids, g_pids, q_camids, g_camids, max_rank, use_metric_cuhk03=False):
+def evaluate_py(distmat, q_pids, g_pids, q_camids, g_camids, max_rank):
     return  eval_market1501(distmat, q_pids, g_pids, q_camids, g_camids, max_rank)
 
-def evaluate_rank(distmat, q_pids, g_pids, q_camids, g_camids, max_rank=50,
-                  use_metric_cuhk03=False, use_cython=True):
+def evaluate_rank(distmat, q_pids, g_pids, q_camids, g_camids, max_rank=50):
     """Evaluates CMC rank.
 
     Args:
@@ -97,7 +96,4 @@ def evaluate_rank(distmat, q_pids, g_pids, q_camids, g_camids, max_rank=50,
             This is highly recommended as the cython code can speed up the cmc computation
             by more than 10x. This requires Cython to be installed.
     """
-    if use_cython and IS_CYTHON_AVAI:
-        return evaluate_cy(distmat, q_pids, g_pids, q_camids, g_camids, max_rank, use_metric_cuhk03)
-    else:
-        return evaluate_py(distmat, q_pids, g_pids, q_camids, g_camids, max_rank, use_metric_cuhk03)
+    evaluate_py(distmat, q_pids, g_pids, q_camids, g_camids, max_rank)

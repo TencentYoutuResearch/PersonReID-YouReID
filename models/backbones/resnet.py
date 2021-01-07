@@ -1,16 +1,11 @@
-#conding=utf-8
-# @Time  : 2020/4/26 15:28
-# @Author: fufuyu
-# @Email:  fufuyu@tencent.com
 
+import os
 import math
 import torch
 from torch import nn
 from torch.utils import model_zoo
-from torchvision.ops.deform_conv import DeformConv2d
 from core.layers import NonLocal, IBN
-import os
-import numpy as np
+
 
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
@@ -121,8 +116,7 @@ class ResNet(nn.Module):
                             downsample, self.groups, self.base_width))
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
-            min_stop = max(blocks - 4, 0)
-            use_non_local_flag = use_non_local and i == blocks - 2 #min_stop < i <= (blocks - 2)
+            use_non_local_flag = use_non_local and i == blocks - 2
             layers.append(block(self.inplanes, planes,
                                 groups=self.groups,
                                 base_width=self.base_width,
@@ -132,13 +126,7 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        # np.save('/raid/home/fufuyu/snapshot/distribute/baseline_b128_mdmc_mix/input.npy', x.cpu().numpy())
-        # x = np.loadtxt('/raid/home/fufuyu/snapshot/distribute/baseline_b128_mdmc_mix/network_input.out', dtype=np.float32)
-        # x = np.reshape(x, (1, 3, 256, 128))
-        # x = torch.from_numpy(x).cuda()
         x = self.conv1(x)
-        # np.save('/raid/home/fufuyu/snapshot/distribute/baseline_b128_mdmc_mix/test.npy', x.cpu().numpy())
-        # np.save('/raid/home/fufuyu/snapshot/distribute/baseline_b128_mdmc_mix/conv1.npy', self.conv1.weight.cpu().numpy())
         x = self.bn1(x)
         x = self.relu(x)
         x = self.maxpool(x)
@@ -156,7 +144,8 @@ class ResNet(nn.Module):
             print('Download from', model_urls[self._model_name])
             if 'LOCAL_RANK' in os.environ and os.environ['LOCAL_RANK']:
                 print('map weight to cuda: %s' % str(os.environ['LOCAL_RANK']))
-                state_dict = model_zoo.load_url(model_urls[self._model_name], map_location="cuda:" + str(os.environ['LOCAL_RANK']))
+                state_dict = model_zoo.load_url(model_urls[self._model_name],
+                                                map_location="cuda:" + str(os.environ['LOCAL_RANK']))
             else:
                 state_dict = model_zoo.load_url(model_urls[self._model_name])
             state_dict.pop('fc.weight')

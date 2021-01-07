@@ -6,10 +6,7 @@ sys.path.append("../config/pycharm-debug-py3k.egg")
 import utils.measure
 from  scipy import io
 import utils.metric
-from collections import defaultdict
 import json
-import numpy
-import time
 
 def eval_result(data, root, use_metric_cuhk03=False,
                 use_rerank=False, use_pcb_format=True, logger=None):

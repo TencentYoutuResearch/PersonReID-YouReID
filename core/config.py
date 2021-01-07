@@ -3,10 +3,10 @@
 # @Author: fufuyu
 # @Email:  fufuyu@tencent.com
 
-
-import yaml
 import os
 import argparse
+import yaml
+
 
 class Config(object):
     def __init__(self, args):

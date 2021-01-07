@@ -53,4 +53,3 @@ if __name__ == '__main__':
     print(euclidean(a.numpy(),b.numpy()))
     import scipy.spatial.distance as distance
     print(distance.cdist(a.numpy(), b.numpy(), 'euclidean'))
-

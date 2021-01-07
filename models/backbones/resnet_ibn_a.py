@@ -1,16 +1,10 @@
-#conding=utf-8
-# @Time  : 2019/12/28 19:16
-# @Author: fufuyu
-# @Email:  fufuyu@tencen.com
-
+import os
 import torch
 import torch.nn as nn
-import math
 import torch.utils.model_zoo as model_zoo
 from collections import OrderedDict
-from core.layers import NonLocal, IBN
 from .resnet import Bottleneck
-import os
+
 
 __all__ = ['ResNet', 'resnet50_ibn_a', 'resnet101_ibn_a',
            'resnet152_ibn_a']
@@ -160,7 +154,8 @@ def resnet101_ibn_a(pretrained=False, last_stride=1, **kwargs):
     if pretrained:
         if 'LOCAL_RANK' in os.environ and os.environ['LOCAL_RANK']:
             print('map weight to cuda: %s' % str(os.environ['LOCAL_RANK']))
-            state_dict = torch.load(model_urls['resnet101_ibn_a'], map_location="cuda:" + str(os.environ['LOCAL_RANK']))
+            state_dict = torch.load(model_urls['resnet101_ibn_a'],
+                                    map_location="cuda:" + str(os.environ['LOCAL_RANK']))
         else:
             state_dict = torch.load(model_urls['resnet101_ibn_a'])
         new_state_dict = OrderedDict()

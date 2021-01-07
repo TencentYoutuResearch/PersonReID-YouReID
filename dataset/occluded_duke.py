@@ -1,27 +1,16 @@
-#conding=utf-8
-# @Time  : 2019/12/19 20:08
-# @Author: fufuyu
-# @Email:  fufuyu@tencen.com
+import os
+import sys
+sys.path.append("..")
 
-import utils.my_transforms as my_transforms
 import torch
 import torchvision.transforms as transforms
 import torch.utils.data as data
-from PIL import Image
-import os
-import os.path
-import time
-import scipy.io as sio
-import sys
-sys.path.append("..")
-from utils.iotools import read_image, is_image_file
 
-import numpy as np
-from copy import deepcopy
-import pickle
+import utils.my_transforms as my_transforms
+from utils.iotools import read_image
 from .formatdata import FormatData
 
-class Occluded_Duke(FormatData):
+class OccludedDuke(FormatData):
     def __init__(self, root='/data1/home/fufuyu/dataset/Occluded_Duke', part='train',
                  loader=read_image, require_path=False, size=(384,128),
                  least_image_per_class=4, mgn_style_aug=False,
@@ -39,13 +28,13 @@ class Occluded_Duke(FormatData):
             with open(os.path.join(root, 'train.list')) as rf:
                 im_names = rf.read().splitlines()
             ids = set([])
-            for line_i, im_name in enumerate(im_names):
+            for im_name in im_names:
                 d = int(im_name.split('_')[0])
                 if d not in ids:
                     ids.add(d)
             ids2labels = {d: idx for (idx, d) in enumerate(sorted(list(ids)))}
             imgs = []
-            for line_i, im_name in enumerate(im_names):
+            for im_name in im_names:
                 d = int(im_name.split('_')[0])
                 new_label = ids2labels[d]
                 imgs.append((os.path.join(root, 'bounding_box_train', im_name), new_label, 0))
@@ -113,7 +102,7 @@ class Occluded_Duke(FormatData):
         if self.load_img_to_cash:
             self.cash_imgs = []
             for index in range(self.len):
-                path, target, _ = self.imgs[index]
+                path, _, _ = self.imgs[index]
                 img = self.loader(path)
                 self.cash_imgs.append(img)
 
@@ -165,21 +154,3 @@ class Occluded_Duke(FormatData):
 
     def __len__(self):
         return len(self.imgs)
-
-
-
-def test():
-    market = Occluded_Duke(part='train')
-
-    train_loader = torch.utils.data.DataLoader(
-        market,
-        batch_size=32, shuffle=True,
-        num_workers=4, pin_memory=True)
-    for i, (input, target) in enumerate(train_loader):
-        # print(flags.sum())
-        print(input.shape, target.shape)
-        print('*********')
-
-
-if __name__ == '__main__':
-    test()

@@ -91,5 +91,3 @@ class PCB(nn.Module):
         triplet_logit = torch.cat(triplet_logits, dim=1)
 
         return softmax_logits, [triplet_logit]
-
-

@@ -3,7 +3,7 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-from torch.nn import Conv2d, Module, Linear, BatchNorm2d, ReLU
+from torch.nn import Conv2d, Module, ReLU
 from torch.nn.modules.utils import _pair
 
 __all__ = ['SplAtConv2d']
