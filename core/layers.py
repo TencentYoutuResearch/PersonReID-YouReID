@@ -210,7 +210,7 @@ class DSBN2dConstBatch(nn.Module):
 
         bs = x.size(0)
         # print('befor', bs, x.size(), self.constant_batch)
-        assert (bs % self.constant_batch==0)
+        assert (bs % self.constant_batch == 0)
         split = torch.split(x, self.constant_batch, 0)
         out_list = [self.bn_list[i](split[i].contiguous()) for i in range(bs // self.constant_batch)]
         out = torch.cat(out_list, 0)

@@ -19,7 +19,7 @@ def find_classes(config):
     classes = []
 
     for line in lines:
-        filename, cls = line.strip().split(' ')
+        _, cls = line.strip().split(' ')
         if cls not in classes:
             classes.append(cls)
 

@@ -188,7 +188,7 @@ class DistributeRandomIdentitySampler(RandomIdentitySampler):
                         random.shuffle(pid_images)
                         index_dict_temp[pid] = pid_images
                     batch_idxs = []
-                    for i in range(self.num_instances):
+                    for _ in range(self.num_instances):
                         idx = index_dict_temp[pid].pop()
                         batch_idxs.append(idx)
                     final_idxs.append(batch_idxs)
