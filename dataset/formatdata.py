@@ -1,5 +1,6 @@
 import os
 import sys
+
 sys.path.append("..")
 from copy import deepcopy
 import pickle
@@ -9,7 +10,6 @@ import torch.utils.data as data
 
 import utils.my_transforms as my_transforms
 from utils.iotools import read_image, is_image_file
-
 
 
 def find_classes(config):
@@ -28,12 +28,10 @@ def find_classes(config):
 
 
 def make_dataset(root, config, class_to_idx, classes):
-
     with open(config, 'r') as f:
         lines = f.readlines()
     lines.sort()
     images = []
-
 
     for line in lines:
         filename, c = line.strip().split(' ')
@@ -43,7 +41,6 @@ def make_dataset(root, config, class_to_idx, classes):
             if c in classes:
                 item = (path, class_to_idx[c], 0)
                 images.append(item)
-
 
     return images
 
@@ -75,12 +72,10 @@ def make_query(root, config):
         item = (path, int(c), 0)
         images.append(item)
 
-
     return images
 
 
 class FormatData(data.Dataset):
-
 
     def __init__(self, root='/data1/home/fufuyu/dataset/',
                  dataname='market1501', part='train',
@@ -164,19 +159,18 @@ class FormatData(data.Dataset):
                 else:
                     # crop_image_paths = glob.glob('/data1/home/fufuyu/dataset/msmt17_pcb/images/*.jpg')
                     self.transform = transforms.Compose([
-                                                         transforms.RandomHorizontalFlip(),
-                                                         transforms.Resize(size),
-                                                         transforms.Pad(10),
-                                                         transforms.RandomCrop(size),
-                                                         transforms.ToTensor(),
-                                                         transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                                              std=[0.229, 0.224, 0.225]),
-                                                         my_transforms.RandomErasing(mean=[0.485, 0.456, 0.406]
-                                                                                      ),
-                                                         ])
+                        transforms.RandomHorizontalFlip(),
+                        transforms.Resize(size),
+                        transforms.Pad(10),
+                        transforms.RandomCrop(size),
+                        transforms.ToTensor(),
+                        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                             std=[0.229, 0.224, 0.225]),
+                        my_transforms.RandomErasing(mean=[0.485, 0.456, 0.406]
+                                                    ),
+                    ])
         else:
             self.transform = default_transforms
-
 
         self.imgs = imgs
         self.classes = classes
@@ -208,7 +202,7 @@ class FormatData(data.Dataset):
 
         temp = deepcopy(image_dict)
 
-        for k,v in temp.items():
+        for k, v in temp.items():
             if v < least_image_per_class:
                 image_dict.pop(k)
 
@@ -222,7 +216,6 @@ class FormatData(data.Dataset):
         classes = list(range(len(new_class_to_idx)))
 
         return classes, new_imgs
-
 
     def parse_im_name(self, im_name):
         """Get the person id or cam from an image name."""
@@ -257,10 +250,9 @@ class FormatData(data.Dataset):
         return len(self.imgs)
 
 
-
 class FormatDatas(data.Dataset):
     def __init__(self, root, dataname, part='train',
-                 loader=read_image, require_path=False, size=(384,128),
+                 loader=read_image, require_path=False, size=(384, 128),
                  least_image_per_class=4, mgn_style_aug=False,
                  load_img_to_cash=False, default_transforms=None, **kwargs):
         self.logger = kwargs.get('logger', print)
@@ -298,13 +290,14 @@ class FormatDatas(data.Dataset):
         """
         dataset_ind = 0
         for i in range(len(self.datasets)):
-            if index < sum(self.lens[:i+1]):
+            if index < sum(self.lens[:i + 1]):
                 dataset_ind = i
                 break
         if dataset_ind == 0:
             return self.datasets[dataset_ind].__getitem__(index=index)
         else:
             return self.datasets[dataset_ind].__getitem__(index=index - sum(self.lens[:dataset_ind]))
+
 
 if __name__ == '__main__':
     test()

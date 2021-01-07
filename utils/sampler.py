@@ -180,7 +180,7 @@ class DistributeRandomIdentitySampler(RandomIdentitySampler):
             num_samples = int(math.ceil(self.length * 1.0 / (self.num_replicas * self.batch_size)))
             total_size = num_samples * self.num_replicas * self.num_pids_per_batch
             # print('total', total_size)
-            for i in range(total_size):
+            for _ in range(total_size):
                 select_pids = random.sample(avai_pids, self.num_pids_per_batch)
                 for pid in select_pids:
                     if len(index_dict_temp[pid]) < self.num_instances:

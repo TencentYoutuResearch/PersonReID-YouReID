@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def eval_market1501(distmat, q_pids, g_pids, q_camids, g_camids, max_rank):
     """Evaluation with market1501 metric
     Key: for each query identity, its gallery images from the same camera view are discarded.
@@ -62,7 +63,8 @@ def eval_market1501(distmat, q_pids, g_pids, q_camids, g_camids, max_rank):
 
 
 def evaluate_py(distmat, q_pids, g_pids, q_camids, g_camids, max_rank):
-    return  eval_market1501(distmat, q_pids, g_pids, q_camids, g_camids, max_rank)
+    return eval_market1501(distmat, q_pids, g_pids, q_camids, g_camids, max_rank)
+
 
 def evaluate_rank(distmat, q_pids, g_pids, q_camids, g_camids, max_rank=50):
     """Evaluates CMC rank.
@@ -84,4 +86,4 @@ def evaluate_rank(distmat, q_pids, g_pids, q_camids, g_camids, max_rank=50):
             This is highly recommended as the cython code can speed up the cmc computation
             by more than 10x. This requires Cython to be installed.
     """
-    evaluate_py(distmat, q_pids, g_pids, q_camids, g_camids, max_rank)
+    return evaluate_py(distmat, q_pids, g_pids, q_camids, g_camids, max_rank)

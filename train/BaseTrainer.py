@@ -23,8 +23,8 @@ from core.layers import convert_dsbnConstBatch
 
 os.environ['CUDA_VISIBLE_DEVICES'] = ','.join([str(x) for x in config.get('gpus')])
 
-class BaseTrainer(object):
 
+class BaseTrainer(object):
 
     def __init__(self):
         self.logger = Logger(config.get('task_id'), rank=os.environ['RANK'] if 'RANK' in os.environ else '0')
@@ -52,34 +52,33 @@ class BaseTrainer(object):
                                                            part='train',
                                                            size=(cfg['height'], cfg['width']),
                                                            least_image_per_class=cfg['least_image_per_class'],
-                                                            **params
-                                                        )
+                                                           **params
+                                                           )
         if config.get('debug'):
             source_train_sampler = RandomIdentitySampler(source_data, cfg['batch_size'],
-                                                  cfg['least_image_per_class'],
-                                                  cfg['use_tf_sample']
-                                                  )
+                                                         cfg['least_image_per_class'],
+                                                         cfg['use_tf_sample']
+                                                         )
         else:
             source_train_sampler = DistributeRandomIdentitySampler(source_data, cfg['batch_size'],
-                                                        cfg['sample_image_per_class'],
-                                                        cfg['use_tf_sample'],
-                                                        rnd_select_nid=cfg['rnd_select_nid'],
-                                                        )
+                                                                   cfg['sample_image_per_class'],
+                                                                   cfg['use_tf_sample'],
+                                                                   rnd_select_nid=cfg['rnd_select_nid'],
+                                                                   )
         source_train_loader = torch.utils.data.DataLoader(
             source_data,
             batch_size=cfg['batch_size'], shuffle=False, sampler=source_train_sampler,
             num_workers=cfg['workers'], pin_memory=True
         )
 
-
         target_loader = {
             'train':
                 torch.utils.data.DataLoader(
                     dataset.__dict__[cfg['test_class']](root=cfg['root'], dataname=cfg['test_name'],
-                                                         part='train', mode='val',
-                                                         require_path=True, size=(cfg['height'], cfg['width']),
-                                                         **params
-                                                         ),
+                                                        part='train', mode='val',
+                                                        require_path=True, size=(cfg['height'], cfg['width']),
+                                                        **params
+                                                        ),
                     batch_size=cfg['batch_size'], shuffle=False, num_workers=cfg['workers'], pin_memory=True)
             ,
             'query':
@@ -130,7 +129,6 @@ class BaseTrainer(object):
         self.logger.write(model)
 
         return model
-
 
     def evalution(self, model, test_loader):
 
@@ -220,11 +218,11 @@ class BaseTrainer(object):
 
                 if ocfg.get('epochs') - 10 <= epoch <= ocfg.get('epochs'):
                     self.extract(test_loader, model)
-                    cur_mAP, cur_rank_1 = evaluate.eval_result(config.get('dataset_config')['test_name'],
-                                                               root=config.get('task_id'),
-                                                               use_pcb_format=True,
-                                                               logger=self.logger
-                                                               )
+                    cur_mAP, _ = evaluate.eval_result(config.get('dataset_config')['test_name'],
+                                                      root=config.get('task_id'),
+                                                      use_pcb_format=True,
+                                                      logger=self.logger
+                                                      )
                     if cur_mAP > mAP:
                         mAP = cur_mAP
                         save_checkpoint({
@@ -273,10 +271,10 @@ class BaseTrainer(object):
                 for name, l in zip(losses_names, losses):
                     show_loss += '%s: %f ' % (name, l.item())
                 self.logger.write('Epoch: [{0}][{1}/{2}] '
-                             'Time {batch_time:.3f} '
-                             'Data {data_time:.3f} '
-                             'lr {lr: .6f} '
-                             '{loss}'.format(
+                                  'Time {batch_time:.3f} '
+                                  'Data {data_time:.3f} '
+                                  'lr {lr: .6f} '
+                                  '{loss}'.format(
                     epoch, i, len(train_loader) // len(config.get('gpus')), batch_time=batch_time,
                     data_time=data_time, loss=show_loss,
                     lr=lr_scheduler.optimizer.param_groups[0]['lr']))
@@ -368,7 +366,6 @@ class BaseTrainer(object):
         sio.savemat(os.path.join(config.get('task_id'), data + '_' + part + '.mat'),
                     {'feature': features, 'label': labels, 'path': paths})
 
-
     def train_or_val(self):
         self.logger.write(config._config)
         self.init_seed()
@@ -382,7 +379,6 @@ class BaseTrainer(object):
         optimizer, lr_scheduler = self.build_opt_and_lr(model)
         start_epoch = self.load_ckpt(model, optimizer)
         self.train_body(model, optimizer, lr_scheduler, source_train_loader, target_loader, start_epoch)
-
 
 
 if __name__ == '__main__':

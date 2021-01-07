@@ -152,7 +152,7 @@ class PairGraph(nn.Module):
         :return:
         '''
 
-        b, c, h, w = x.size()
+        b, _, h, w = x.size()
 
         y = self.y(x)
         y = normalize(y, axis=1)   # n, c, h, w

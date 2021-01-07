@@ -1,10 +1,11 @@
-#conding=utf-8
+# conding=utf-8
 # @Time  : 2019/12/19 20:08
 # @Author: fufuyu
 # @Email:  fufuyu@tencen.com
 
 import os
 import sys
+
 sys.path.append("..")
 
 import torchvision.transforms as transforms
@@ -15,10 +16,9 @@ from .formatdata import make_gallery
 
 class TestData(data.Dataset):
     def __init__(self, root='/data1/home/fufuyu/dataset/',
-                 dataname='market1501', loader=read_image, require_path=False, size=(384,128),
+                 dataname='market1501', loader=read_image, require_path=False, size=(384, 128),
                  **kwargs
                  ):
-
         self.root = os.path.join(root, dataname)
         self.loader = loader
         self.require_path = require_path
@@ -32,8 +32,7 @@ class TestData(data.Dataset):
                                  std=[0.229, 0.224, 0.225])
         ])
 
-
-        self.imgs = imgs #* 128
+        self.imgs = imgs  # * 128
         self.len = len(self.imgs)
 
         self.logger('\n')
@@ -42,7 +41,6 @@ class TestData(data.Dataset):
         self.logger('  #  images   : {}'.format(len(self.imgs)))
         self.logger('  *****************************************')
         self.logger('\n')
-
 
     def __getitem__(self, index):
         """

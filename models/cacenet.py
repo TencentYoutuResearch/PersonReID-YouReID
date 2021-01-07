@@ -102,7 +102,7 @@ class CACENET(nn.Module):
 
     def forward(self, x, label=None):
         x = self.resnet(x)
-        b, _, _, w = x.size()
+        _, _, _, w = x.size()
         feat_pair = self.get_pair_feature(x)
         feat_pair = self.pair_graph(feat_pair)
         # print(feat_pair.size())
@@ -113,8 +113,8 @@ class CACENET(nn.Module):
 
         if self.training:
             logit = self.fc_layer(f)
-            logit_0 = self.pair_fc_layer(f_0) #s[0]
-            logit_1 = self.pair_fc_layer(f_1) #s[1]
+            logit_0 = self.pair_fc_layer(f_0)
+            logit_1 = self.pair_fc_layer(f_1)
             return f, f_0, f_1, logit, logit_0, logit_1
         else:
             return f

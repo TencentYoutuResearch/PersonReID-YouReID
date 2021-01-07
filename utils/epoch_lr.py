@@ -1,16 +1,14 @@
 import math
 from bisect import bisect_right
-import torch
-import torch.nn as nn
 from torch.optim.lr_scheduler import _LRScheduler
+
 
 class EpochBaseLR(_LRScheduler):
 
-
     def __init__(self, optimizer, milestones, lrs, last_epoch=-1, ):
-        if len(milestones)+1 != len(lrs):
+        if len(milestones) + 1 != len(lrs):
             raise ValueError('The length of milestones must equal to the '
-                             ' length of lr + 1. Got {} and {} separately', len(milestones)+1, len(lrs))
+                             ' length of lr + 1. Got {} and {} separately', len(milestones) + 1, len(lrs))
         if not list(milestones) == sorted(milestones):
             raise ValueError('Milestones should be a list of'
                              ' increasing integers. Got {}', milestones)
@@ -32,17 +30,16 @@ class EpochBaseLR(_LRScheduler):
             g['lr'] = lr
 
 
-
 class WarmupMultiStepLR(_LRScheduler):
     def __init__(
-        self,
-        optimizer,
-        milestones,
-        gamma=0.1,
-        warmup_factor=1.0 / 3,
-        warmup_iters=500,
-        warmup_method="linear",
-        last_epoch=-1,
+            self,
+            optimizer,
+            milestones,
+            gamma=0.1,
+            warmup_factor=1.0 / 3,
+            warmup_iters=500,
+            warmup_method="linear",
+            last_epoch=-1,
     ):
         if not list(milestones) == sorted(milestones):
             raise ValueError(
@@ -76,7 +73,6 @@ class WarmupMultiStepLR(_LRScheduler):
             * self.gamma ** bisect_right(self.milestones, self.last_epoch)
             for base_lr in self.base_lrs
         ]
-
 
 
 class CosineAnnealingWarmRestarts(_LRScheduler):
@@ -171,7 +167,6 @@ class CosineAnnealingWarmRestarts(_LRScheduler):
             param_group['lr'] = lr
 
 
-
 class CosineAnnealingWarmUp(_LRScheduler):
     r"""Set the learning rate of each parameter group using a cosine annealing
     schedule, where :math:`\eta_{max}` is set to the initial lr, :math:`T_{cur}`
@@ -211,10 +206,9 @@ class CosineAnnealingWarmUp(_LRScheduler):
         self.T_cur = last_epoch
         super(CosineAnnealingWarmUp, self).__init__(optimizer, last_epoch)
 
-
     def get_lr(self):
         if self.T_cur < self.T_0:
-            #print('divide', self.T_cur / self.T_0)
+            # print('divide', self.T_cur / self.T_0)
             return [self.warmup_factor * base_lr + base_lr * (1 - self.warmup_factor) * self.T_cur / self.T_0
                     for base_lr in self.base_lrs]
         else:
@@ -247,7 +241,7 @@ class CosineAnnealingWarmUp(_LRScheduler):
             >>> scheduler.step() # scheduler.step(27), instead of scheduler(20)
         """
         if epoch is None:
-            epoch  = 0
+            epoch = 0
         else:
             if epoch < 0:
                 raise ValueError("Expected non-negative epoch, but got {}".format(epoch))
@@ -255,5 +249,5 @@ class CosineAnnealingWarmUp(_LRScheduler):
         self.last_epoch = epoch
         # self.last_epoch = epoch
         for param_group, lr in zip(self.optimizer.param_groups, self.get_lr()):
-            #print('param_group', lr)
+            # print('param_group', lr)
             param_group['lr'] = lr
