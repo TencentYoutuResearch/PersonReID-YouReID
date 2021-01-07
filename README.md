@@ -1,8 +1,7 @@
 # Devil’s in the Details: Aligning Visual Clues for Conditional Embedding in Person Re-Identification
 
 ## Introduction
-This is the tensorflow implementation of our paper "Devil’s in the Details: Aligning Visual Clues for Conditional Embedding in Person Re-Identification"，
-which is submissed to CVPR2021.  the older paper version is ""
+This is the tensorflow implementation of our paper "Devil’s in the Details: Aligning Visual Clues for Conditional Embedding in Person Re-Identification".
 In this paper:
 1) CACE-Net is able to integrate both visual clue alignment and conditional feature embedding into a unified ReID framework
 2) Instead of using a pre-defined Adjacency Matrix, our CACE-Net uses a novel correspondence attention module where the visual clues is automatically predicted and dynamically adjusted during training
