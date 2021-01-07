@@ -1,22 +1,12 @@
-#conding=utf-8
-# @Time  : 2019/12/23 10:57
-# @Author: fufuyu
-# @Email:  fufuyu@tencen.com
-
+import copy
 import torch
 from torch import nn
 from .backbones.resnet import resnet50, resnet101, resnext101_32x8d
-from .backbones.resnest import resnest50, resnest101, resnest200, resnest269
-import copy
 
-resnest_zoo = {
-    'resnest50': resnest50,
-    'resnest101': resnest101,
-    'resnest200': resnest200,
-    'resnest269': resnest269
-}
 
 class PCB(nn.Module):
+
+
     def __init__(self,
                  num_classes=1000,
                  num_layers=50,
@@ -42,11 +32,6 @@ class PCB(nn.Module):
                                     gcb=gcb,
                                     with_ibn=with_ibn,
                                     stage_with_gcb=stage_with_gcb)
-        elif num_layers in ['resnest50', 'resnest101', 'resnest200', 'resnest269']:
-            self.resnet = resnest_zoo[num_layers](pretrained=True,
-                                                  with_top=False,
-                                                  last_stride=1,
-                                                  )
 
         self.gap = nn.AdaptiveAvgPool2d(1)
         self.stripe = stripe

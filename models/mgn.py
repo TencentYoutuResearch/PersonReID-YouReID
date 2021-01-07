@@ -6,19 +6,25 @@ from .backbones import model_zoo
 
 
 class MGN(nn.Module):
+
+
     def __init__(self,
                  last_stride=1,
                  use_non_local=False,
                  num_classes=1000,
-                 stripes=[2, 3],
+                 stripes=None,
                  num_layers=50,
-                 loss_type=['softmax, triplet'],
+                 loss_type=None,
                  margin=0.5
                  ):
         super(MGN, self).__init__()
+        if loss_type is None:
+            loss_type = ['softmax, triplet']
+        if stripes is None:
+            stripes = [2, 3]
         self.stripes = stripes
         self.margin = margin
-        self.loss_type= loss_type
+        self.loss_type = loss_type
         kwargs = {
             'use_non_local': use_non_local
         }
@@ -59,12 +65,12 @@ class MGN(nn.Module):
             if 'labelsmooth' in self.loss_type:
                 self.ce_loss = CrossEntropyLabelSmooth(num_classes)
             else:
-                self.ce_loss = nn.CrossEntropyLoss()  # .cuda()
+                self.ce_loss = nn.CrossEntropyLoss()
 
         if 'triplet' in self.loss_type:
-            self.tri_loss = TripletLoss(margin, normalize_feature=not 'circle' in self.loss_type) #.cuda()
+            self.tri_loss = TripletLoss(margin, normalize_feature=not 'circle' in self.loss_type)
         if 'soft_triplet' in self.loss_type:
-            self.tri_loss = SoftTripletLoss(margin, normalize_feature=not 'circle' in self.loss_type) #.cuda()
+            self.tri_loss = SoftTripletLoss(margin, normalize_feature=not 'circle' in self.loss_type)
 
     @staticmethod
     def _init_reduction(reduction):

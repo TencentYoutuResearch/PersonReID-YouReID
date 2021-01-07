@@ -1,13 +1,15 @@
 import torch
 
+
 def cosine(query, gallery):
     query = torch.from_numpy(query)
     gallery = torch.from_numpy(gallery)
 
     m, n = query.size(0), gallery.size(0)
-    dist = 1 - torch.mm(query, gallery.t())/((torch.norm(query, 2, dim=1, keepdim=True).expand(m, n)
-                                              *torch.norm(gallery, 2, dim=1, keepdim=True).expand(n, m).t()))
+    dist = 1 - torch.mm(query, gallery.t()) / ((torch.norm(query, 2, dim=1, keepdim=True).expand(m, n)
+                                                * torch.norm(gallery, 2, dim=1, keepdim=True).expand(n, m).t()))
     return dist.numpy()
+
 
 def euclidean(query, gallery):
     query = torch.from_numpy(query)
@@ -18,6 +20,7 @@ def euclidean(query, gallery):
            torch.pow(gallery, 2).sum(dim=1, keepdim=True).expand(n, m).t()
     dist.addmm_(1, -2, query, gallery.t())
     return dist.numpy()
+
 
 def mask_distance(query, gallery):
     query_gf = torch.from_numpy(query['global_feature']).cuda()
@@ -36,7 +39,7 @@ def mask_distance(query, gallery):
 
     local_dists = []
     for i in range(query_lf.size()[0]):
-        local_dist_i = (1 - (query_lf[i:i+1] * gallery_lf).sum(-1)) / 2
+        local_dist_i = (1 - (query_lf[i:i + 1] * gallery_lf).sum(-1)) / 2
         local_dist_i = torch.unsqueeze(local_dist_i, dim=0)
         local_dists.append(local_dist_i)
     local_dists = torch.cat(local_dists, dim=0)
@@ -45,11 +48,3 @@ def mask_distance(query, gallery):
     dist = dist.cpu().numpy()
 
     return dist
-
-if __name__ == '__main__':
-    a = torch.rand((3, 3))
-    b = torch.rand((4, 3))
-    print(a,b)
-    print(euclidean(a.numpy(),b.numpy()))
-    import scipy.spatial.distance as distance
-    print(distance.cdist(a.numpy(), b.numpy(), 'euclidean'))

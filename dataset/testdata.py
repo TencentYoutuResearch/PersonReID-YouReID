@@ -3,15 +3,13 @@
 # @Author: fufuyu
 # @Email:  fufuyu@tencen.com
 
-import torchvision.transforms as transforms
-import torch.utils.data as data
 import os
-import os.path
 import sys
 sys.path.append("..")
-from utils.iotools import read_image, is_image_file
 
-import numpy as np
+import torchvision.transforms as transforms
+import torch.utils.data as data
+from utils.iotools import read_image
 from .formatdata import make_gallery
 
 
@@ -54,7 +52,7 @@ class TestData(data.Dataset):
         Returns:
             tuple: (image, target) where target is class_index of the target class.
         """
-        path, target, cam = self.imgs[index]
+        path, target, _ = self.imgs[index]
         img = self.loader(path)
         img = self.transform(img)
 
@@ -66,5 +64,3 @@ class TestData(data.Dataset):
 
     def __len__(self):
         return len(self.imgs)
-
-

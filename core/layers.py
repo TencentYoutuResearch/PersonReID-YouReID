@@ -9,6 +9,7 @@ from torch import nn
 from torch.nn.parameter import Parameter
 from .loss import normalize
 
+
 class GeneralizedMeanPooling(nn.Module):
     r"""Applies a 2D power-average adaptive pooling over an input signal composed of several input planes.
     The function computed is: :math:`f(X) = pow(sum(pow(X, p)), 1/p)`
@@ -65,29 +66,29 @@ class NonLocal(nn.Module):
 
         self.g = nn.Conv2d(in_channels=self.in_channels,
                          out_channels=self.inter_channels,
-                         kernel_size=1, stride=1, padding=0) #, bias=False
+                         kernel_size=1, stride=1, padding=0)
 
         if bn_layer:
             self.W = nn.Sequential(
                 nn.Conv2d(in_channels=self.inter_channels,
                           out_channels=self.in_channels,
-                        kernel_size=1, stride=1, padding=0), #, bias=False
+                        kernel_size=1, stride=1, padding=0),
                 nn.BatchNorm2d(self.in_channels)
             )
             nn.init.constant_(self.W[1].weight, 0)
             nn.init.constant_(self.W[1].bias, 0)
         else:
             self.W = nn.Conv2d(in_channels=self.inter_channels, out_channels=self.in_channels,
-                             kernel_size=1, stride=1, padding=0) #, bias=False
+                             kernel_size=1, stride=1, padding=0)
             nn.init.constant_(self.W.weight, 0)
             # nn.init.constant_(self.W.bias, 0)
 
         self.theta = nn.Conv2d(in_channels=self.in_channels,
                                out_channels=self.inter_channels,
-                              kernel_size=1, stride=1, padding=0) #, bias=False
+                              kernel_size=1, stride=1, padding=0)
         self.phi = nn.Conv2d(in_channels=self.in_channels,
                               out_channels=self.inter_channels,
-                              kernel_size=1, stride=1, padding=0) #, bias=False
+                              kernel_size=1, stride=1, padding=0)
 
     def forward(self, x):
         '''
@@ -188,12 +189,13 @@ class DSBN2d(nn.Module):
             return self.BN_S(x)
 
         bs = x.size(0)
-        assert (bs%2==0)
+        assert (bs % 2 == 0)
         split = torch.split(x, int(bs/2), 0)
         out1 = self.BN_S(split[0].contiguous())
         out2 = self.BN_T(split[1].contiguous())
         out = torch.cat((out1, out2), 0)
         return out
+
 
 class DSBN2dConstBatch(nn.Module):
     def __init__(self, planes, batch_size=64, constant_batch=32):
@@ -201,6 +203,7 @@ class DSBN2dConstBatch(nn.Module):
         self.num_features = planes
         self.constant_batch = constant_batch
         self.bn_list = nn.Sequential(*[nn.BatchNorm2d(planes) for _ in range(batch_size // constant_batch)])
+
     def forward(self, x):
         if (not self.training):
             return self.bn_list[0](x)
@@ -214,23 +217,26 @@ class DSBN2dConstBatch(nn.Module):
         # print('after', bs, out.size(), self.constant_batch, len(out_list), out_list[0].size())
         return out
 
+
 class DSBN2dShare(nn.Module):
     def __init__(self, planes, constant_batch=32):
         super(DSBN2dShare, self).__init__()
         self.num_features = planes
         self.constant_batch = constant_batch
         self.bn = nn.BatchNorm2d(planes)
+
     def forward(self, x):
         if (not self.training):
             return self.bn(x)
 
         bs = x.size(0)
         # print(bs, self.constant_batch)
-        assert (bs % self.constant_batch==0)
+        assert (bs % self.constant_batch == 0)
         split = torch.split(x, self.constant_batch, 0)
         out_list = [self.bn(split[i].contiguous()) for i in range(bs // self.constant_batch)]
         out = torch.cat(out_list, 0)
         return out
+
 
 def convert_dsbn(model):
     for _, (child_name, child) in enumerate(model.named_children()):
@@ -244,6 +250,7 @@ def convert_dsbn(model):
         else:
             convert_dsbn(child)
 
+
 def convert_dsbnShare(model, constant_batch=32):
     for _, (child_name, child) in enumerate(model.named_children()):
         # print(next(model.parameters()))
@@ -254,6 +261,7 @@ def convert_dsbnShare(model, constant_batch=32):
             setattr(model, child_name, m)
         else:
             convert_dsbnShare(child, constant_batch=constant_batch)
+
 
 def convert_dsbnConstBatch(model, batch_size=64, constant_batch=32):
     for _, (child_name, child) in enumerate(model.named_children()):
@@ -292,6 +300,7 @@ class GN(nn.Module):
         out = self.weight * out + self.bias
         out = out.view_as(inp)
         return out
+
 
 class IBN(nn.Module):
     def __init__(self, planes):

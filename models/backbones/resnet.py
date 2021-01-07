@@ -1,11 +1,9 @@
-
 import os
 import math
 import torch
 from torch import nn
 from torch.utils import model_zoo
 from core.layers import NonLocal, IBN
-
 
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
@@ -19,6 +17,7 @@ model_urls = {
     'wide_resnet50_2': 'https://download.pytorch.org/models/wide_resnet50_2-95faca4d.pth',
     'wide_resnet101_2': 'https://download.pytorch.org/models/wide_resnet101_2-32ee1156.pth',
 }
+
 
 class Bottleneck(nn.Module):
     expansion = 4
@@ -50,7 +49,7 @@ class Bottleneck(nn.Module):
         self.use_non_local = use_non_local
         if self.use_non_local:
             self.non_local_block = NonLocal(planes * self.expansion,
-                                       planes * self.expansion // 16)
+                                            planes * self.expansion // 16)
 
     def forward(self, x):
         residual = x
@@ -120,7 +119,7 @@ class ResNet(nn.Module):
             layers.append(block(self.inplanes, planes,
                                 groups=self.groups,
                                 base_width=self.base_width,
-                                use_non_local = use_non_local_flag
+                                use_non_local=use_non_local_flag
                                 ))
 
         return nn.Sequential(*layers)
@@ -165,7 +164,6 @@ class ResNet(nn.Module):
             state_dict = new_state_dict
             self.load_state_dict(state_dict, strict=False)
 
-
     def random_init(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -177,13 +175,14 @@ class ResNet(nn.Module):
 
 
 def _resnet(pretrained, last_stride, block,
-            layers, model_name, model_path='',**kwargs):
+            layers, model_name, model_path='', **kwargs):
     """"""
     model = ResNet(last_stride,
-                   block, layers, model_name,**kwargs)
+                   block, layers, model_name, **kwargs)
     if pretrained:
         model.load_pretrain(model_path)
     return model
+
 
 def resnet50(pretrained=False, last_stride=1, use_non_local=False, model_path=''):
     """Constructs a ResNet-50 model.
@@ -196,6 +195,7 @@ def resnet50(pretrained=False, last_stride=1, use_non_local=False, model_path=''
                    block=Bottleneck, layers=[3, 4, 6, 3], use_non_local=use_non_local,
                    model_path=model_path, model_name='resnet50')
 
+
 def resnet101(pretrained=False, last_stride=1, use_non_local=False, model_path=''):
     """Constructs a ResNet-50 model.
 
@@ -206,6 +206,7 @@ def resnet101(pretrained=False, last_stride=1, use_non_local=False, model_path='
 
     return _resnet(pretrained=pretrained, last_stride=last_stride, use_non_local=use_non_local,
                    block=Bottleneck, layers=[3, 4, 23, 3], model_path=model_path, model_name='resnet101')
+
 
 def resnet152(pretrained=False, last_stride=1, model_path=''):
     """Constructs a ResNet-50 model.

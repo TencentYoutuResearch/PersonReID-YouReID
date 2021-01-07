@@ -1,19 +1,24 @@
-from .backbones import model_zoo
 from core.loss import *
 from core.layers import GeneralizedMeanPoolingP
+from .backbones import model_zoo
+
 
 class Baseline(nn.Module):
+
+
     def __init__(self,
                  num_classes=1000,
                  num_layers=50,
                  last_stride=1,
                  reduce_dim=768,
                  pool_type='baseline',
-                 loss_type=['softmax, triplet'],
+                 loss_type=None,
                  margin=0.5,
                  use_non_local=False
                  ):
         super(Baseline, self).__init__()
+        if loss_type is None:
+            loss_type = ['softmax, triplet']
         kwargs = {
             'use_non_local': use_non_local
         }
@@ -117,6 +122,3 @@ class Baseline(nn.Module):
             losses.append(tri_loss)
             losses_names.append('tri_loss')
         return losses, losses_names
-
-
-

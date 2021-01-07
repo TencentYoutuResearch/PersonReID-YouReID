@@ -47,6 +47,7 @@ def make_dataset(root, config, class_to_idx, classes):
 
     return images
 
+
 def make_gallery(root):
     images = [d for d in os.listdir(root)]
     imgs = []
@@ -59,6 +60,7 @@ def make_gallery(root):
         imgs.append(item)
 
     return imgs
+
 
 def make_query(root, config):
     with open(config, 'r') as f:
@@ -76,10 +78,13 @@ def make_query(root, config):
 
     return images
 
+
 class FormatData(data.Dataset):
+
+
     def __init__(self, root='/data1/home/fufuyu/dataset/',
                  dataname='market1501', part='train',
-                 loader=read_image, require_path=False, size=(384,128),
+                 loader=read_image, require_path=False, size=(384, 128),
                  least_image_per_class=4, mgn_style_aug=False, label_offset=0,
                  load_img_to_cash=False, default_transforms=None, **kwargs):
 
@@ -150,7 +155,7 @@ class FormatData(data.Dataset):
                     print('use random padding')
                     self.transform = transforms.Compose([
                         transforms.RandomHorizontalFlip(),
-                        my_transforms.RandomPadding(),  #optional
+                        my_transforms.RandomPadding(),
                         transforms.Resize(size),
                         transforms.ToTensor(),
                         transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -195,7 +200,7 @@ class FormatData(data.Dataset):
 
     def _postprocess(self, imgs, least_image_per_class=4):
         image_dict = {}
-        for _, c ,_ in imgs:
+        for _, c, _ in imgs:
             if c not in image_dict:
                 image_dict[c] = 1
             else:
@@ -210,7 +215,7 @@ class FormatData(data.Dataset):
         new_class_to_idx = {k: i for i, k in enumerate(list(image_dict.keys()))}
 
         new_imgs = []
-        for path, c ,i in imgs:
+        for path, c, i in imgs:
             if c in new_class_to_idx:
                 new_imgs.append((path, new_class_to_idx[c] + self.label_offset, i))
 

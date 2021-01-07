@@ -19,11 +19,13 @@ from utils import *
 
 from core.config import config
 from core.loss import normalize
-from core.layers import convert_dsbn, convert_dsbnConstBatch, convert_dsbnShare
+from core.layers import convert_dsbnConstBatch
 
 os.environ['CUDA_VISIBLE_DEVICES'] = ','.join([str(x) for x in config.get('gpus')])
 
 class BaseTrainer(object):
+
+
     def __init__(self):
         self.logger = Logger(config.get('task_id'), rank=os.environ['RANK'] if 'RANK' in os.environ else '0')
 
@@ -199,7 +201,7 @@ class BaseTrainer(object):
         ocfg = config.get('optm_config')
         optimizer.step()
         start = time.time()
-        mAP, rank_1 = 0, 0
+        mAP = 0
         scaler = torch.cuda.amp.GradScaler()
         for epoch in range(start_epoch, ocfg.get('epochs')):
             # train for one epoch
@@ -224,7 +226,7 @@ class BaseTrainer(object):
                                                                logger=self.logger
                                                                )
                     if cur_mAP > mAP:
-                        mAP, rank_1 = cur_mAP, cur_rank_1
+                        mAP = cur_mAP
                         save_checkpoint({
                             'epoch': epoch + 1,
                             'state_dict': model.state_dict(),
@@ -348,9 +350,9 @@ class BaseTrainer(object):
 
     def convert_to_onnx(self, model, test_loader):
         model.eval()
-        for p, val_loader in test_loader.items():
+        for _, val_loader in test_loader.items():
             with torch.no_grad():
-                for i, (input, target, path) in enumerate(val_loader):
+                for _, (input, _, _) in enumerate(val_loader):
                     input = input.cuda(non_blocking=True)
                     torch.onnx.export(model, input, os.path.join(config.get('task_id'), 'reid.onnx'),
                                       verbose=True, export_params=True, do_constant_folding=True,

@@ -1,8 +1,9 @@
 import os
+from collections import OrderedDict
 import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
-from collections import OrderedDict
+
 from .resnet import Bottleneck
 
 
@@ -74,8 +75,10 @@ class ResNet(nn.Module):
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, scale, layers[0])
         self.layer2 = self._make_layer(block, scale * 2, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, scale * 4, layers[2], stride=2, use_non_local=self.use_non_local)
-        self.layer4 = self._make_layer(block, scale * 8, layers[3], stride=last_stride, use_non_local=self.use_non_local)
+        self.layer3 = self._make_layer(block, scale * 4, layers[2], stride=2,
+                                       use_non_local=self.use_non_local)
+        self.layer4 = self._make_layer(block, scale * 8, layers[3], stride=last_stride,
+                                       use_non_local=self.use_non_local)
         self.avgpool = nn.AvgPool2d(7)
         self.fc = nn.Linear(scale * 8 * block.expansion, num_classes)
 

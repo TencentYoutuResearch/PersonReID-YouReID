@@ -8,8 +8,6 @@ import logging
 import os
 import sys
 
-from .iotools import mkdir_if_missing
-
 
 def setup_logger(name, save_dir, distributed_rank):
     logger = logging.getLogger(name)

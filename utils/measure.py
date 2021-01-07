@@ -1,16 +1,4 @@
-from collections import defaultdict
 import numpy as np
-import warnings
-try:
-    from .rank_cylib.rank_cy import evaluate_cy
-    IS_CYTHON_AVAI = True
-except ImportError:
-    IS_CYTHON_AVAI = False
-    warnings.warn(
-        'Cython evaluation (very fast so highly recommended) is '
-        'unavailable, now use python evaluation.'
-    )
-
 
 def eval_market1501(distmat, q_pids, g_pids, q_camids, g_camids, max_rank):
     """Evaluation with market1501 metric
@@ -27,7 +15,7 @@ def eval_market1501(distmat, q_pids, g_pids, q_camids, g_camids, max_rank):
 
     # compute cmc curve for each query
     all_cmc = []
-    all_AP = []
+    all_ap = []
     num_valid_q = 0.  # number of valid query
 
     for q_idx in range(num_q):
@@ -58,8 +46,8 @@ def eval_market1501(distmat, q_pids, g_pids, q_camids, g_camids, max_rank):
         tmp_cmc = raw_cmc.cumsum()
         tmp_cmc = [x / (i + 1.) for i, x in enumerate(tmp_cmc)]
         tmp_cmc = np.asarray(tmp_cmc) * raw_cmc
-        AP = tmp_cmc.sum() / num_rel
-        all_AP.append(AP)
+        ap = tmp_cmc.sum() / num_rel
+        all_ap.append(ap)
 
     if num_valid_q < 0:
         mAP = 0
@@ -68,7 +56,7 @@ def eval_market1501(distmat, q_pids, g_pids, q_camids, g_camids, max_rank):
 
     all_cmc = np.asarray(all_cmc).astype(np.float32)
     all_cmc = all_cmc.sum(0) / num_valid_q
-    mAP = np.mean(all_AP)
+    mAP = np.mean(all_ap)
 
     return all_cmc, mAP
 

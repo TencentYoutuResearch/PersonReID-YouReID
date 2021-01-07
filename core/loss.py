@@ -1,7 +1,8 @@
+import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
+
 
 def normalize(x, axis=-1):
     """Normalizing to unit length along the specified dimension.
@@ -12,6 +13,7 @@ def normalize(x, axis=-1):
     """
     x = 1. * x / (torch.norm(x, 2, axis, keepdim=True).expand_as(x) + 1e-12)
     return x
+
 
 class TripletLoss(nn.Module):
     """Triplet loss with hard positive/negative mining.
@@ -76,6 +78,8 @@ class TripletLoss(nn.Module):
 
 
 class PairTripletLoss(TripletLoss):
+
+
     def __init__(self, margin=0.3, normalize_feature=True):
         super(PairTripletLoss, self).__init__(margin, normalize_feature)
 
@@ -135,7 +139,7 @@ class SoftTripletLoss(nn.Module):
             # Compute ranking hinge loss
             y = torch.ones_like(pos)
             if self.margin > 0:
-                loss += self.ranking_loss(pos + self.margin - neg)  #self.ranking_loss(neg, pos, y)
+                loss += self.ranking_loss(pos + self.margin - neg)
             else:
                 loss += self.ranking_loss(neg - pos, y)
         return loss / n
@@ -166,7 +170,8 @@ class CrossEntropyLabelSmooth(nn.Module):
         """
         log_probs = self.logsoftmax(inputs)
         targets = torch.zeros(log_probs.size()).scatter_(1, targets.unsqueeze(1).data.cpu(), 1)
-        if self.use_gpu: targets = targets.cuda()
+        if self.use_gpu:
+            targets = targets.cuda()
         targets = (1 - self.epsilon) * targets + self.epsilon / self.num_classes
         loss = (- targets * log_probs).mean(0).sum()
         return loss
@@ -201,27 +206,6 @@ class ArcMarginProduct(nn.Module):
             self.in_features, self.out_features
         )
 
-    # def forward(self, input, label):
-    #     # --------------------------- cos(theta) & phi(theta) ---------------------------
-    #     #print(input.size(), self.weight.size())
-    #     cosine = F.linear(F.normalize(input), F.normalize(self.weight))
-    #     sine = torch.sqrt((1.0 - torch.pow(cosine, 2)).clamp(0, 1))
-    #     phi = cosine * self.cos_m - sine * self.sin_m
-    #     if self.easy_margin:
-    #         phi = torch.where(cosine > 0, phi, cosine)
-    #     else:
-    #         phi = torch.where(cosine > self.th, phi, cosine - self.mm)
-    #     # --------------------------- convert label to one-hot ---------------------------
-    #     # one_hot = torch.zeros(cosine.size(), requires_grad=True, device='cuda')
-    #     one_hot = torch.zeros(cosine.size(), device='cuda')
-    #     one_hot.scatter_(1, label.view(-1, 1).long(), 1)
-    #     # -------------torch.where(out_i = {x_i if condition_i else y_i) -------------
-    #     output = (one_hot * phi) + ((1.0 - one_hot) * cosine)  # you can use torch.where if your torch.__version__ is 0.4
-    #     output *= self.s
-    #     # print(output)
-    #
-    #     return output
-
     def forward(self, input, label):
         # --------------------------- cos(theta) & phi(theta) ---------------------------
         #print(input.size(), self.weight.size())
@@ -231,7 +215,8 @@ class ArcMarginProduct(nn.Module):
         one_hot = torch.zeros(cosine.size(), device='cuda')
         one_hot.scatter_(1, label.view(-1, 1).long(), 1)
         # -------------torch.where(out_i = {x_i if condition_i else y_i) -------------
-        output = (one_hot * phi) + ((1.0 - one_hot) * cosine)  # you can use torch.where if your torch.__version__ is 0.4
+        # you can use torch.where if your torch.__version__ is 0.4
+        output = (one_hot * phi) + ((1.0 - one_hot) * cosine)
         output *= self.s
         # print(output)
 
@@ -282,7 +267,9 @@ def one_hot(labels, num_classes, dtype=None):
 
 
 class Circle(nn.Module):
-    def __init__(self, num_classes, in_feat, scale=64, margin=0.35): # 128 0.15
+
+
+    def __init__(self, num_classes, in_feat, scale=64, margin=0.35):
         super().__init__()
         self._num_classes = num_classes
         self._s = scale
@@ -314,11 +301,11 @@ class Circle(nn.Module):
 class MultiSimilarityLoss(nn.Module):
     def __init__(self):
         super(MultiSimilarityLoss, self).__init__()
-        self.thresh = 0.5 # 0.5
+        self.thresh = 0.5
         self.margin = 0.1
 
-        self.scale_pos = 2. #default 2
-        self.scale_neg = 40. # default 40
+        self.scale_pos = 2.
+        self.scale_neg = 40.
         print(self.scale_pos, self.scale_neg)
 
     def forward(self, feats, labels):

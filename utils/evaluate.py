@@ -4,15 +4,16 @@ import numpy as np
 sys.path.append("..")
 sys.path.append("../config/pycharm-debug-py3k.egg")
 import utils.measure
-from  scipy import io
+from scipy import io
 import utils.metric
 import json
 
-def eval_result(data, root, use_metric_cuhk03=False,
+
+def eval_result(data, root,
                 use_rerank=False, use_pcb_format=True, logger=None):
 
-    gallery = os.path.join(root, data +'_gallery.mat')
-    query = os.path.join(root, data +'_query.mat')
+    gallery = os.path.join(root, data + '_gallery.mat')
+    query = os.path.join(root, data + '_query.mat')
     gallery = io.loadmat(gallery)
     query = io.loadmat(query)
 
@@ -48,27 +49,24 @@ def eval_result(data, root, use_metric_cuhk03=False,
     cmc_scores, mAP  = utils.measure.evaluate_rank(dist,
                                 np.array(query_label), np.array(gallery_label),
                                 np.array(query_cam), np.array(gallery_cam),
-                                max_rank=50, use_metric_cuhk03=use_metric_cuhk03)
+                                max_rank=50)
     if logger is None:
         print('Mean AP: {:4.2%}'.format(mAP))
     else:
         logger.write('Mean AP: {:4.2%}'.format(mAP))
 
-    if mAP>=0 and mAP<=100:
+    if 0 <= mAP <= 100:
         if use_pcb_format:
             cmc_topk = (1, 5, 10, 15, 20)
         else:
             cmc_topk = (1, 3, 5)
         for k in cmc_topk:
             if logger is None:
-                print('  top-{:<4}{:12.2%}'
-                      .format(k,cmc_scores[k - 1]))
+                logger.write('  top-{:<4}{:12.2%}'.format(k, cmc_scores[k - 1]))
             else:
-                logger.write('  top-{:<4}{:12.2%}'
-                      .format(k,cmc_scores[k - 1]))
+                logger.write('  top-{:<4}{:12.2%}'.format(k, cmc_scores[k - 1]))
 
     return mAP, cmc_scores[0]
-
 
 def write_json(path, signature, data):
     with open(os.path.join(path, signature + 'result.json'), 'w') as f:

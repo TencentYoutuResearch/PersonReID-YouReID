@@ -1,14 +1,11 @@
-#conding=utf-8
-# @Time  : 2019/12/23 10:57
-# @Author: fufuyu
-# @Email:  fufuyu@tencen.com
-
-from .backbones import model_zoo
 from core.loss import *
 from core.layers import GeneralizedMeanPoolingP, PairGraph
-import copy
+from .backbones import model_zoo
+
 
 class CACENET(nn.Module):
+
+
     def __init__(self,
                  num_classes=1000,
                  num_layers=50,
@@ -42,7 +39,7 @@ class CACENET(nn.Module):
 
         self.pair_graph = PairGraph(2048)
         self.embedding_layer = nn.Sequential(
-            nn.Conv2d(input_dim, reduce_dim,kernel_size=1, stride=1, bias=False),
+            nn.Conv2d(input_dim, reduce_dim, kernel_size=1, stride=1, bias=False),
             nn.BatchNorm2d(reduce_dim)
         )
         nn.init.kaiming_normal_(self.embedding_layer[0].weight, mode='fan_out')
@@ -58,11 +55,11 @@ class CACENET(nn.Module):
         self._init_fc(self.pair_fc_layer)
 
         self.ce_loss_ls = CrossEntropyLabelSmooth(num_classes)
-        self.ce_loss = nn.CrossEntropyLoss()  # .cuda()
+        self.ce_loss = nn.CrossEntropyLoss()
 
-        self.tri_loss = TripletLoss(margin, normalize_feature=True) #.cuda()
+        self.tri_loss = TripletLoss(margin, normalize_feature=True)
         self.pair_tri_loss = PairTripletLoss(margin, normalize_feature=True)
-        # self.tri_loss = SoftTripletLoss(margin, normalize_feature=True) #.cuda()
+        # self.tri_loss = SoftTripletLoss(margin, normalize_feature=True)
 
     @staticmethod
     def _init_bn(bn):
@@ -105,7 +102,7 @@ class CACENET(nn.Module):
 
     def forward(self, x, label=None):
         x = self.resnet(x)
-        b, c, h, w = x.size()
+        b, _, _, w = x.size()
         feat_pair = self.get_pair_feature(x)
         feat_pair = self.pair_graph(feat_pair)
         # print(feat_pair.size())
@@ -135,7 +132,7 @@ class CACENET(nn.Module):
         # logit_0 = self.pair_fc_layers[0](f_0)
         loss_0_0 = self.ce_loss(logit_0, target_0)
         loss_0_1 = self.ce_loss(logit_0, target_1)
-        loss_0 = self.alpha * loss_0_0 + (1- self.alpha) * loss_0_1
+        loss_0 = self.alpha * loss_0_0 + (1 - self.alpha) * loss_0_1
         losses.append(loss_0)
         losses_names.append('mixup_loss_0')
 
@@ -155,6 +152,3 @@ class CACENET(nn.Module):
         losses_names.append('pair_tri_loss')
 
         return losses, losses_names
-
-
-

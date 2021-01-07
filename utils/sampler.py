@@ -1,11 +1,11 @@
-
 from collections import defaultdict
-import numpy as np
 import math
 import copy
 import random
+import numpy as np
 import torch.distributed as dist
-from torch.utils.data.sampler import Sampler, RandomSampler
+from torch.utils.data.sampler import Sampler
+
 
 class RandomIdentitySampler(Sampler):
     """Randomly samples N identities each with K instances.
@@ -15,6 +15,7 @@ class RandomIdentitySampler(Sampler):
         batch_size (int): batch size.
         num_instances (int): number of instances per identity in a batch.
     """
+
     def __init__(self, data_source, batch_size, num_instances, use_tf_sample=False, use_all_sample=False):
         if batch_size < num_instances:
             raise ValueError('batch_size={} must be no less '
@@ -58,7 +59,7 @@ class RandomIdentitySampler(Sampler):
                     batch_idxs_dict[pid].append(batch_idxs)
                     batch_idxs = []
 
-        return  batch_idxs_dict
+        return batch_idxs_dict
 
     def __iter__(self):
 
@@ -66,7 +67,7 @@ class RandomIdentitySampler(Sampler):
             batch_idxs_dict = self.get_batch_idxs_dict()
             avai_pids = copy.deepcopy(self.pids)
             final_idxs = []
-            
+
             if not self.use_all_sample:
                 while len(avai_pids) >= self.num_pids_per_batch:
                     selected_pids = random.sample(avai_pids, self.num_pids_per_batch)
@@ -75,7 +76,7 @@ class RandomIdentitySampler(Sampler):
                         final_idxs.extend(batch_idxs)
                         if len(batch_idxs_dict[pid]) == 0:
                             avai_pids.remove(pid)
-            #else:
+            # else:
             #    final_idxs.
             #    for pid in selected_pids:
             #        final_idxs.
@@ -89,19 +90,18 @@ class RandomIdentitySampler(Sampler):
             index_dict_temp = copy.deepcopy(index_dict)
             final_idxs = []
             ncount = self.length // self.batch_size + 1
-            for i in range(ncount):
+            for _ in range(ncount):
                 select_pids = random.sample(avai_pids, self.num_pids_per_batch)
                 for pid in select_pids:
                     if len(index_dict_temp[pid]) < self.num_instances:
                         pid_images = copy.deepcopy(index_dict[pid])
                         random.shuffle(pid_images)
                         index_dict_temp[pid] = pid_images
-                    for i in range(self.num_instances):
+                    for _ in range(self.num_instances):
                         idx = index_dict_temp[pid].pop()
                         final_idxs.append(idx)
 
             return iter(final_idxs)
-
 
     def __len__(self):
         return self.length
@@ -135,7 +135,6 @@ class DistributeRandomIdentitySampler(RandomIdentitySampler):
         self.seed = seed
         self.shuffle = shuffle
 
-
     def __iter__(self):
         if self.shuffle:
             np.random.seed(self.epoch + self.seed)
@@ -147,7 +146,7 @@ class DistributeRandomIdentitySampler(RandomIdentitySampler):
 
             if not self.use_all_sample:
                 while len(avai_pids) >= (self.num_pids_per_batch - self.rnd_select_nid):
-                    selected_pids = np.random.choice(avai_pids, size=self.num_pids_per_batch- self.rnd_select_nid,
+                    selected_pids = np.random.choice(avai_pids, size=self.num_pids_per_batch - self.rnd_select_nid,
                                                      replace=False)
                     for pid in selected_pids:
                         batch_idxs = batch_idxs_dict[pid].pop(0)
@@ -155,11 +154,10 @@ class DistributeRandomIdentitySampler(RandomIdentitySampler):
                         if len(batch_idxs_dict[pid]) == 0:
                             avai_pids.remove(pid)
 
-                    for i in range(self.rnd_select_nid):
+                    for _ in range(self.rnd_select_nid):
                         final_idxs.append(
                             np.random.choice(self.length, size=self.num_instances, replace=False).tolist()
                         )
-
 
             num_samples = int(math.ceil(len(final_idxs) * 1.0 / (self.num_replicas * self.num_pids_per_batch)))
             total_size = num_samples * self.num_replicas * self.num_pids_per_batch
@@ -215,8 +213,3 @@ class DistributeRandomIdentitySampler(RandomIdentitySampler):
             epoch (int): Epoch number.
         """
         self.epoch = epoch
-
-
-
-
-

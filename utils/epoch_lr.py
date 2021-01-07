@@ -1,9 +1,12 @@
+import math
+from bisect import bisect_right
 import torch
 import torch.nn as nn
-from bisect import bisect_right
 from torch.optim.lr_scheduler import _LRScheduler
-import math
+
 class EpochBaseLR(_LRScheduler):
+
+
     def __init__(self, optimizer, milestones, lrs, last_epoch=-1, ):
         if len(milestones)+1 != len(lrs):
             raise ValueError('The length of milestones must equal to the '
@@ -212,10 +215,10 @@ class CosineAnnealingWarmUp(_LRScheduler):
     def get_lr(self):
         if self.T_cur < self.T_0:
             #print('divide', self.T_cur / self.T_0)
-            return [self.warmup_factor *  base_lr + base_lr* (1 - self.warmup_factor) * self.T_cur / self.T_0
+            return [self.warmup_factor * base_lr + base_lr * (1 - self.warmup_factor) * self.T_cur / self.T_0
                     for base_lr in self.base_lrs]
         else:
-            return [base_lr * (1 + math.cos(math.pi * (self.T_cur -self.T_0) / (self.T_end - self.T_0))) / 2
+            return [base_lr * (1 + math.cos(math.pi * (self.T_cur - self.T_0) / (self.T_end - self.T_0))) / 2
                     for base_lr in self.base_lrs]
 
     def step(self, epoch=None):
@@ -254,21 +257,3 @@ class CosineAnnealingWarmUp(_LRScheduler):
         for param_group, lr in zip(self.optimizer.param_groups, self.get_lr()):
             #print('param_group', lr)
             param_group['lr'] = lr
-
-
-def test():
-
-    net  = nn.Linear(12,4)
-    param_groups = [{'params':net.parameters(), 'lr_mult': 0.1}]
-
-    optimizer = torch.optim.SGD(param_groups, lr=0.01,
-                                momentum=0.1,
-                                weight_decay=0.9,
-                                nesterov=True)
-    scheduler = EpochBaseLR(optimizer, milestones=[5, 30, 80], lrs=[0.01, 0.1, 0.01, 0.001])
-    for epoch in range(100):
-        scheduler.step()
-
-
-if __name__ == '__main__':
-    test()
