@@ -158,7 +158,8 @@ class BaseTrainer(object):
                                         momentum=ocfg['momentum'],
                                         weight_decay=ocfg['weight_decay'])
         else:
-            optimizer = torch.optim.Adam(parameters, ocfg['lr'], weight_decay=ocfg['weight_decay'])
+            optimizer = torch.optim.Adam(parameters, ocfg['lr'] * len(config.get('gpus')),
+                                                                      weight_decay=ocfg['weight_decay'])
 
         # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.step, gamma=0.1, last_epoch=-1)
         lr_scheduler = CosineAnnealingWarmUp(optimizer,

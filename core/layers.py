@@ -317,3 +317,4 @@ class IBN(nn.Module):
         out2 = self.BN(split[1].contiguous())
         out = torch.cat((out1, out2), 1)
         return out
+

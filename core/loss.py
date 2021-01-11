@@ -341,3 +341,64 @@ class MultiSimilarityLoss(nn.Module):
 
         loss = sum(loss) / batch_size
         return loss
+
+
+# class LSR_direction(nn.Module):
+#     """docstring for ClassName"""
+#
+#     def __init__(self, alpha=0.6, beta=0.15, topk=30):
+#         super(LSR_direction, self).__init__()
+#         self.alpha = alpha
+#         self.beta = beta
+#         self.topk = topk
+#         self.mask = None
+#         self.log_softmax = torch.nn.LogSoftmax()
+#
+#     def forward(self, inputs, targets, which_mask='mask'):  # torch.Size([256, 10431])  torch.Size([256])
+#         num_class = inputs.size()[1]
+#         if which_mask == 'mask':
+#             targets = self.mask[targets.data.cpu()]
+#         else:
+#             targets = self.mask2[targets.data.cpu()]
+#         targets = Variable(targets.cuda())
+#
+#         outputs = self.log_softmax(inputs)
+#         loss = - (targets * outputs)
+#         # print (loss.size(), 'lsr')
+#         loss = loss.sum(dim=1)
+#         # print (loss, 'lsr')
+#         loss = loss.mean(dim=0)
+#         return loss
+#
+#     def set_mask(self, same_id_list, num_class):
+#         print('self.alpha:', self.alpha, 'self.beta:', self.beta)
+#         mask = torch.FloatTensor(num_class, num_class)
+#         mask.zero_()
+#         tmp = torch.LongTensor(list(range(num_class)))
+#         tmp = torch.unsqueeze(tmp, 1)
+#         mask.scatter_(1, tmp, self.alpha)
+#         for id_list in same_id_list:
+#             if len(id_list) == 2:
+#                 mask[id_list[0], id_list[1]] = self.beta * 2
+#                 mask[id_list[1], id_list[0]] = self.beta * 2
+#                 mask[id_list[0]].add_((1 - self.alpha - self.beta * 2) / num_class)
+#                 mask[id_list[1]].add_((1 - self.alpha - self.beta * 2) / num_class)
+#             if len(id_list) == 3:
+#                 mask[id_list[0], id_list[1]] = self.beta
+#                 mask[id_list[0], id_list[2]] = self.beta
+#                 mask[id_list[1], id_list[0]] = self.beta
+#                 mask[id_list[1], id_list[2]] = self.beta
+#                 mask[id_list[2], id_list[0]] = self.beta
+#                 mask[id_list[2], id_list[1]] = self.beta
+#
+#                 mask[id_list[0]].add_((1 - self.alpha - 2 * self.beta) / num_class)
+#                 mask[id_list[1]].add_((1 - self.alpha - 2 * self.beta) / num_class)
+#                 mask[id_list[2]].add_((1 - self.alpha - 2 * self.beta) / num_class)
+#
+#         self.mask = mask
+#
+#     def set_alpha(self, option):
+#         self.alpha = option
+#
+#     def set_beta(self, option):
+#         self.beta = option

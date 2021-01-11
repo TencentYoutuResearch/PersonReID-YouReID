@@ -2,3 +2,5 @@
 *.pyd
 .idea
 legacy/
+VAAL/
+vaal*

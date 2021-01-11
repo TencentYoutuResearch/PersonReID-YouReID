@@ -41,7 +41,7 @@ class RandomIdentitySampler(Sampler):
             num = len(idxs)
             if num < self.num_instances:
                 num = self.num_instances
-            self.length += num - num % (0 if self.use_tf_sample else num % self.num_instances)
+            self.length += num - (0 if self.use_tf_sample else num % self.num_instances)
 
     def get_batch_idxs_dict(self):
 

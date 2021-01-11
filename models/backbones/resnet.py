@@ -111,8 +111,8 @@ class ResNet(nn.Module):
 
         layers = []
         layers.append(block(self.inplanes, planes,
-                            stride,
-                            downsample, self.groups, self.base_width))
+                            stride=stride, downsample=downsample,
+                            groups=self.groups, base_width=self.base_width))
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
             use_non_local_flag = use_non_local and i == blocks - 2

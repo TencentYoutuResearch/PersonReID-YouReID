@@ -4,12 +4,16 @@
 
 This file documents collection of models trained with you-reid framework. All numbers were obtained with 2 NVIDIA V100 GPU. The software in use were PyTorch 1.6, CUDA 10.1.
 
+we compare some state of the art model in the following picture, using the performance in those paper.
+![image](./zoo/market1501_performance.png) ![image](./zoo/duke_performance.png)
+"*" stands for using extra information, "^" stands for using larger backbone
+
 ## Models
 
 ||Market1501<br>mAP/rank-1</br>|DukeMTMC<br>mAP/rank-1</br>|MSMT17<br>mAP/rank-1</br>|config|download|
 |:-:|:-:|:-:|:-:|:-:|
 |baseline|87.65/94.80|77.21/88.33|54.61/78.80|[config](../example/baseline/baseline_dist_bn.yaml)|[weight]() [log]()|
-|MGN|89.28/95.84|80.57/89.14|-|[config](../example/mgn/mgn.yaml)|[weight]() [log]()|
+|MGN|89.28/95.84|80.57/89.14|61.67/83.31|[config](../example/mgn/mgn.yaml)|[weight]() [log]()|
 |CACENET|90.00/95.67|81.13/89.90|61.9/83.77|[config](../example/cacenet/cacenet.yaml)|[weight]() [log]()|
 
 
