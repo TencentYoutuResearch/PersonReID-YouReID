@@ -37,6 +37,7 @@ this project provides the following algorithms and scripts to run them. Please s
 </table>
 
 You also can find these models in [model_zoo](docs/model_zoo.md)
+Specially we contribute some reid samples to opencv community, you can use these model in [opencv](https://github.com/opencv/opencv/pull/19108), and you also can visit them at [ReID_extra_testdata](https://github.com/ReID-Team/ReID_extra_testdata).
 ## Requirements and Preparation
 Please install `Python>=3.6` and `PyTorch>=1.6.0`. 
 

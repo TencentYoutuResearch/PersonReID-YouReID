@@ -211,7 +211,7 @@ class FormatData(data.Dataset):
         new_imgs = []
         for path, c, i in imgs:
             if c in new_class_to_idx:
-                new_imgs.append((path, new_class_to_idx[c] + self.label_offset, i))
+                new_imgs.append((path, new_class_to_idx[c], i))
 
         classes = list(range(len(new_class_to_idx)))
 

@@ -1,6 +1,6 @@
-gpus: [0,1]
-yaml: ../example/VAAL/test.yaml #mgn  baseline_dist_bn   #mgn_dist_bn_multidataset
-task_id: ../../snapshot/vaal/test #mgn_fp16 baseline_resnet101_ibn_b128_mdmc_mix_soft_triplet   #mgn_v2_resnet_wo_ls
+gpus: [1,2]
+yaml: ../example/PartNet/market.yaml #mgn  baseline_dist_bn   #mgn_dist_bn_multidataset
+task_id: ../../snapshot/partnet/market_reid_test_4 #mgn_fp16 baseline_resnet101_ibn_b128_mdmc_mix_soft_triplet   #mgn_v2_resnet_wo_ls
 eval: false
 convert_to_onnx: false
 debug: false

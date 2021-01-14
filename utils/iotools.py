@@ -38,13 +38,16 @@ def write_json(obj, fpath):
         json.dump(obj, f, indent=4, separators=(',', ': '))
 
 
-def save_checkpoint(state, root='../../snapshot/', flag='checkpoint.pth'):
+def save_checkpoint(state, root='../../snapshot/', flag='checkpoint.pth', logger=None):
 
     if not os.path.exists(root):
         os.makedirs(root)
     filename = os.path.join(root, flag)
     torch.save(state, filename)
-    print('Save checkpoint at %s' % filename)
+    if logger:
+        logger.write('Save checkpoint at %s' % filename)
+    else:
+        print('Save checkpoint at %s' % filename)
 
 
 IMG_EXTENSIONS = [

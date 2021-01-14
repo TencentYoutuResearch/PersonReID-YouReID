@@ -48,3 +48,19 @@ def mask_distance(query, gallery):
     dist = dist.cpu().numpy()
 
     return dist
+
+def part_distance(query, gallery):
+    """"""
+    qgf, qlf, qlp = query['global_features'], query['local_features'], query['local_parts'][:, :, 1]
+    ggf, glf, glp = gallery['global_features'], gallery['local_features'], gallery['local_parts'][:, :, 1]
+
+    sgf = (1. - torch.mm(qgf, ggf.t())) / 2
+
+    qlp, glp = qlp.unsqueeze(1), glp.unsqueeze(0)
+    overlap = qlp * glp
+
+    slf = (1. - torch.matmul(qlf.permute(1, 0, 2), glf.permute(1, 2, 0))) / 2
+    slf = slf.permute(1, 2, 0) * overlap
+
+    dist = (slf.sum(-1) + sgf) / (overlap.sum(-1) + 1)
+    return dist.data.cpu().numpy()

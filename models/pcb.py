@@ -1,7 +1,7 @@
 import copy
 import torch
 from torch import nn
-from .backbones.resnet import resnet50, resnet101, resnext101_32x8d
+from .backbones import model_zoo
 
 
 class PCB(nn.Module):
@@ -10,32 +10,22 @@ class PCB(nn.Module):
     def __init__(self,
                  num_classes=1000,
                  num_layers=50,
-                 gcb=False,
-                 with_ibn=False,
+                 last_stride=1,
                  reduce_dim=256,
                  stripe=6,
-                 stage_with_gcb_str='0,1,2,3'):
+                 use_non_local=False):
+
         super(PCB, self).__init__()
-        stage_with_gcb = [False, False, False, False]
-        if gcb and stage_with_gcb_str:
-            stage_with_gcb_list = map(int, stage_with_gcb_str.split(','))
-            for n in stage_with_gcb_list:
-                stage_with_gcb[n] = True
-        if num_layers in [50, 101, '101_32x8d']:
-            if num_layers == 50:
-                resnet_fn = resnet50
-            elif num_layers == 101:
-                resnet_fn = resnet101
-            elif num_layers == '101_32x8d':
-                resnet_fn = resnext101_32x8d
-            self.resnet = resnet_fn(pretrained=True,
-                                    gcb=gcb,
-                                    with_ibn=with_ibn,
-                                    stage_with_gcb=stage_with_gcb)
+        kwargs = {
+            'use_non_local': use_non_local
+        }
+        self.resnet = model_zoo[num_layers](
+            pretrained=True, last_stride=last_stride,
+            **kwargs
+        )
 
         self.gap = nn.AdaptiveAvgPool2d(1)
         self.stripe = stripe
-
 
         embedding_layer = nn.Sequential(
                                     nn.Conv2d(2048, reduce_dim, kernel_size=1, stride=1, bias=False),
@@ -76,3 +66,16 @@ class PCB(nn.Module):
         triplet_logit = torch.cat(triplet_logits, dim=1)
 
         return softmax_logits, [triplet_logit]
+
+    def compute_loss(self, output, target):
+        ce_logit, tri_logit = output
+        losses, losses_names = [], []
+        if 'softmax' in self.loss_type or 'arcface' in self.loss_type:
+            cls_loss = self.ce_loss(ce_logit[0], target)
+            losses.append(cls_loss)
+            losses_names.append('cls_loss')
+        if len(set(['triplet',  'soft_triplet']) & set(self.loss_type)) == 1:
+            tri_loss = self.tri_loss(tri_logit[0], target)
+            losses.append(tri_loss)
+            losses_names.append('tri_loss')
+        return losses, losses_names

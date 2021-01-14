@@ -36,7 +36,7 @@ class TripletLoss(nn.Module):
         else:
             self.ranking_loss = nn.SoftMarginLoss()
 
-    def compute_distance(self, inputs):
+    def compute_distance(self, inputs, **kwargs):
         n = inputs.size(0)
         # Compute pairwise distance, replace by the official when merged
         dist = torch.pow(inputs, 2).sum(dim=1, keepdim=True).expand(n, n)
@@ -46,7 +46,7 @@ class TripletLoss(nn.Module):
 
         return dist
 
-    def compute_loss(self, dist, targets):
+    def compute_loss(self, dist, targets, **kwargs):
         n = dist.size(0)
         mask = targets.expand(n, n).eq(targets.expand(n, n).t())
         dist_ap, dist_an = [], []
@@ -63,7 +63,7 @@ class TripletLoss(nn.Module):
         else:
             return self.ranking_loss(dist_an - dist_ap, y)
 
-    def forward(self, inputs, targets):
+    def forward(self, inputs, targets, **kwargs):
         """
         Args:
             inputs (torch.Tensor): feature matrix with shape (batch_size, feat_dim).
@@ -76,6 +76,80 @@ class TripletLoss(nn.Module):
         # For each anchor, find the hardest positive and negative
         return self.compute_loss(dist, targets)
 
+
+class VGTripletLoss(TripletLoss):
+    """Triplet loss with hard positive/negative mining.
+
+    Reference:
+        Hermans et al. In Defense of the Triplet Loss for Person Re-Identification. arXiv:1703.07737.
+
+    Imported from `<https://github.com/Cysu/open-reid/blob/master/reid/loss/triplet.py>`_.
+
+    Args:
+        margin (float, optional): margin for triplet. Default is 0.3.
+    """
+
+    def __init__(self, margin=0.3, normalize_feature=True):
+        super(VGTripletLoss, self).__init__(margin, normalize_feature)
+
+    def compute_distance(self, inputs, **kwargs):
+        global_inputs, partial_input = inputs  # global_inputs b * 512 partial_input b * 6 * 256
+        n = global_inputs.size(0)
+        # calc the distance of pg_global
+        # dist = torch.zeros((n, n), device=global_inputs.device)
+        if self.normalize_feature:
+            global_inputs = F.normalize(global_inputs, p=2, dim=1)  # global_inputs b * 512
+
+        if self.normalize_feature:
+            partial_input = F.normalize(partial_input, p=2, dim=2)  # partial_input b * 6 * 256
+
+        pl = kwargs.get('part_labels')  # b * 6
+
+        gs = torch.matmul(global_inputs, global_inputs.t())
+        gs = (1 + gs) / 2
+
+        pl_0, pl_1 = pl.unsqueeze(1), pl.unsqueeze(0)
+        overlap = pl_0 * pl_1
+
+        slf = (1. + torch.matmul(partial_input.permute(1, 0, 2), partial_input.permute(1, 2, 0))) / 2  # 6 * N * N
+        slf = slf.permute(1, 2, 0) * overlap  # N * N * 6
+
+        dist = (slf.sum(-1) + gs) / (overlap.sum(-1) + 1)
+
+        # for i in range(n):
+        #     # calc the distance of pg_global
+        #     gf = global_inputs[i]
+        #     gf = gf.expand_as(global_inputs)
+        #     gs = gf * global_inputs
+        #     gs = gs.sum(1)
+        #     gs = (gs + 1.) / 2  # [batchsize]
+        #     # Calculate the distance of partial features
+        #     lpl = pl[i]
+        #     overlap = (pl * lpl).float()
+        #     overlap = overlap.view(-1, pl.size(1))
+        #
+        #     pf = partial_input[i]
+        #     pf = pf.expand_as(partial_input)
+        #     ps = pf * partial_input
+        #     ps = ps.sum(2)
+        #     ps = (ps + 1.) / 2
+        #     ps = ps * overlap
+        #
+        #     s = (ps.sum(1) + gs) / (overlap.sum(1) + 1)
+        #     dist[i] = s
+
+        return dist
+
+    def forward(self, inputs, targets, **kwargs):
+        """
+        Args:
+            inputs (torch.Tensor): feature matrix with shape (batch_size, feat_dim).
+            targets (torch.LongTensor): ground truth labels with shape (num_classes).
+        """
+        global_labels, part_labels = targets
+        dist = self.compute_distance(inputs, part_labels=part_labels)
+
+        return self.compute_loss(dist, global_labels)
 
 class PairTripletLoss(TripletLoss):
 

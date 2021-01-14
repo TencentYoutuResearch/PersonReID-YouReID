@@ -50,10 +50,11 @@ class VAAL(nn.Module):
 
         branches = []
         for stripe in stripes:
-            if stripe == 1:
-                num_fc = stripe
-            else:
-                num_fc = stripe + 1
+            # if stripe == 1:
+            #     num_fc = stripe
+            # else:
+            #     num_fc = stripe + 1
+            num_fc = stripe
             embedding_layers = nn.ModuleList([copy.deepcopy(reduction) for _ in range(num_fc)])
             fc_layers = nn.ModuleList([copy.deepcopy(fc_layer) for _ in range(num_fc)])
             branches.append(

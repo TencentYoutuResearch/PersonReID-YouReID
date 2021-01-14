@@ -46,7 +46,8 @@ class BaseTrainer(object):
 
     def build_dataset(self):
         cfg = config.get('dataset_config')
-        params = {'logger': self.logger}
+        params = cfg.get('kwargs') if cfg.get('kwargs') else {}
+        params['logger'] = self.logger
 
         source_data = dataset.__dict__[cfg['train_class']](root=cfg['root'], dataname=cfg['train_name'],
                                                            part='train',
@@ -72,15 +73,15 @@ class BaseTrainer(object):
         )
 
         target_loader = {
-            'train':
-                torch.utils.data.DataLoader(
-                    dataset.__dict__[cfg['test_class']](root=cfg['root'], dataname=cfg['test_name'],
-                                                        part='train', mode='val',
-                                                        require_path=True, size=(cfg['height'], cfg['width']),
-                                                        **params
-                                                        ),
-                    batch_size=cfg['batch_size'], shuffle=False, num_workers=cfg['workers'], pin_memory=True)
-            ,
+            # 'train':
+            #     torch.utils.data.DataLoader(
+            #         dataset.__dict__[cfg['test_class']](root=cfg['root'], dataname=cfg['test_name'],
+            #                                             part='train', mode='val',
+            #                                             require_path=True, size=(cfg['height'], cfg['width']),
+            #                                             **params
+            #                                             ),
+            #         batch_size=cfg['batch_size'], shuffle=False, num_workers=cfg['workers'], pin_memory=True)
+            # ,
             'query':
                 torch.utils.data.DataLoader(
                     dataset.__dict__[cfg['test_class']](root=cfg['root'], dataname=cfg['test_name'], part='query',
@@ -141,25 +142,29 @@ class BaseTrainer(object):
             self.convert_to_onnx(model, test_loader)
             # torch.onnx.export(model, )
         else:
-            self.extract(test_loader, model)
-            eval_result(config.get('dataset_config')['target_name'],
-                        root=config.get('task_id'),
-                        use_pcb_format=True,
-                        logger=self.logger
-                        )
+            self.extract_and_eval(test_loader, model)
+
+
+    def extract_and_eval(self, test_loader, model):
+        self.extract(test_loader, model)
+        mAP, rank_1 = self.eval_result()
+        return mAP, rank_1
 
     def build_opt_and_lr(self, model):
 
         parameters = model.parameters()
-
+        if config.get('debug'):
+            lr_mul = 1
+        else:
+            lr_mul = len(config.get('gpus'))
         ocfg = config.get('optm_config')
         if ocfg['name'] == 'SGD':
-            optimizer = torch.optim.SGD(parameters, ocfg['lr'] * len(config.get('gpus')),
+            optimizer = torch.optim.SGD(parameters, ocfg['lr'] * lr_mul,
                                         momentum=ocfg['momentum'],
                                         weight_decay=ocfg['weight_decay'])
         else:
-            optimizer = torch.optim.Adam(parameters, ocfg['lr'] * len(config.get('gpus')),
-                                                                      weight_decay=ocfg['weight_decay'])
+            optimizer = torch.optim.Adam(parameters, ocfg['lr'] * lr_mul,
+                                         weight_decay=ocfg['weight_decay'])
 
         # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.step, gamma=0.1, last_epoch=-1)
         lr_scheduler = CosineAnnealingWarmUp(optimizer,
@@ -208,29 +213,24 @@ class BaseTrainer(object):
                 train_loader.sampler.set_epoch(epoch)
             self.train_loop(scaler, train_loader, model, optimizer, lr_scheduler, epoch)
             # save checkpoint
-            if int(os.environ['RANK']) == 0 or 'RANK' not in os.environ:
+            if 'RANK' not in os.environ or int(os.environ['RANK']) == 0:
                 if not os.path.exists(config.get('task_id')):
                     os.makedirs(config.get('task_id'))
                 save_checkpoint({
                     'epoch': epoch + 1,
                     'state_dict': model.state_dict(),
                     'optimizer': optimizer.state_dict(),
-                }, root=config.get('task_id'))
+                }, root=config.get('task_id'), logger=self.logger)
 
                 if ocfg.get('epochs') - 10 <= epoch <= ocfg.get('epochs'):
-                    self.extract(test_loader, model)
-                    cur_mAP, _ = evaluate.eval_result(config.get('dataset_config')['test_name'],
-                                                      root=config.get('task_id'),
-                                                      use_pcb_format=True,
-                                                      logger=self.logger
-                                                      )
+                    cur_mAP, _ = self.extract_and_eval(test_loader, model)
                     if cur_mAP > mAP:
                         mAP = cur_mAP
                         save_checkpoint({
                             'epoch': epoch + 1,
                             'state_dict': model.state_dict(),
                             'optimizer': optimizer.state_dict(),
-                        }, root=config.get('task_id'), flag='best_model.pth')
+                        }, root=config.get('task_id'), flag='best_model.pth', logger=self.logger)
 
         end = time.time()
         cost = end - start
@@ -249,7 +249,10 @@ class BaseTrainer(object):
 
             lr_scheduler.step(epoch + float(i) / len(train_loader) / len(config.get('gpus')))
             input = input.cuda(non_blocking=True)
-            target = target.cuda(non_blocking=True)
+            if isinstance(target, (list, tuple)):
+                target = [t.cuda(non_blocking=True) for t in target]
+            else:
+                target = target.cuda(non_blocking=True)
             # compute output
             # ce_losses, tri_losses = model(input, target=target)
 
@@ -366,6 +369,13 @@ class BaseTrainer(object):
         self.logger.write('save at %s' % os.path.join(config.get('task_id'), data + '_' + part + '.mat'))
         sio.savemat(os.path.join(config.get('task_id'), data + '_' + part + '.mat'),
                     {'feature': features, 'label': labels, 'path': paths})
+
+    def eval_result(self, **kwargs):
+        return evaluate.eval_result(config.get('dataset_config')['test_name'],
+                         root=config.get('task_id'),
+                         use_pcb_format=True,
+                         logger=self.logger
+                         )
 
     def train_or_val(self):
         self.logger.write(config._config)
