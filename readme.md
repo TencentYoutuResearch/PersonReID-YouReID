@@ -14,7 +14,7 @@ this project provides the following algorithms and scripts to run them. Please s
 	<td rowspan="3">SL</td><td>CACENET</td><td><a href="https://arxiv.org/abs/2009.05250">Devil's in the Details: Aligning Visual Clues for Conditional Embedding in Person Re-Identification</a></td><td><a href="docs/CACENET/CACENET.md">CACENET.md</a></td><td>finished</td>
     </tr>
     <tr>
-        <td>Pyramid</td><td><a href="https://openaccess.thecvf.com/content_CVPR_2019/papers/Zheng_Pyramidal_Person_Re-IDentification_via_Multi-Loss_Dynamic_Training_CVPR_2019_paper.pdf">Pyramidal Person Re-IDentification via Multi-Loss Dynamic Training</a></td><td><a href="docs/Pyramid/CVPR-2019-Pyramid.md">CVPR-2019-Pyramid.md</a></td><td>coming soon</td>
+        <td>Pyramid</td><td><a href="https://openaccess.thecvf.com/content_CVPR_2019/papers/Zheng_Pyramidal_Person_Re-IDentification_via_Multi-Loss_Dynamic_Training_CVPR_2019_paper.pdf">Pyramidal Person Re-IDentification via Multi-Loss Dynamic Training</a></td><td><a href="docs/Pyramid/CVPR-2019-Pyramid.md">CVPR-2019-Pyramid.md</a></td><td>finished</td>
     </tr>
     <tr>
         <td>VAAL</td><td><a href="https://arxiv.org/abs/1912.01300">Viewpoint-Aware Loss with Angular Regularization for Person Re-Identification</a></td><td><a href="docs/VAAL/AAAI-2020-VAAL.md">AAAI-2020-VAAL.md</a></td><td>coming soon</td>
