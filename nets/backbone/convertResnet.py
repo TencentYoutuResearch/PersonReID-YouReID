@@ -11,7 +11,7 @@ blocks = {
 class ResNet(BasicModel):
     def __init__(self, train_mode, num_layers=101, last_conv_stride=2,
                  ngroup=1,
-                 non_local_type='none', compression=2):
+                 non_local_type='none', non_local_block=2, compression=2):
         super().__init__(train_mode)
 
         assert num_layers in [50, 101, 152]
@@ -21,6 +21,7 @@ class ResNet(BasicModel):
         self.dims = [256, 512, 1024, 2048]
         self.num_blocks = blocks[num_layers]
         self.non_local_type = non_local_type
+        self.non_local_block = non_local_block
         self.compression = compression
         self.ngroup = ngroup
 
@@ -112,7 +113,13 @@ class ResNet(BasicModel):
             x = tf.add(x, shortcut)
             x = tf.nn.relu(x)
 
-            if self.non_local_type in ['single', 'double'] and channel_out >= 1024 and only_one_block_each_stage_non_local:
+            if self.non_local_type in ['single', 'double'] and only_one_block_each_stage_non_local:
+                if self.non_local_block == 2:
+                    channel_f = 1024
+                elif self.non_local_block == 3:
+                    channel_f = 512
+                if channel_out < channel_f:
+                    return x
                 if self.non_local_type == 'single':
                     x = self._non_local_block(x, compression=self.compression)
                 else:

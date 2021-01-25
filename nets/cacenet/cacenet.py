@@ -13,10 +13,11 @@ class CACENET(BasicModel):
                  num_layers=50,
                  last_conv_stride=1,
                  dropout_place='after',
-                 pooling_types=['avg', 'max'],
+                 pooling_types='baseline',
                  loss_type='softmax',
                  margin=0.5,
                  non_local_type='none',
+                 non_local_block=2,
                  compression=2,
                  with_pair_triplet=True,
                  alpha=0.9,
@@ -27,6 +28,7 @@ class CACENET(BasicModel):
                                num_layers=num_layers,
                                last_conv_stride=last_conv_stride,
                                non_local_type=non_local_type,
+                               non_local_block=non_local_block,
                                compression=compression
                                )
 
@@ -101,14 +103,15 @@ class CACENET(BasicModel):
         triplet_logits = []
         local_softmax_logits = []
         with tf.variable_scope('local_conv_list'):
-            pool_feats = []
-            for style in self.pooling_types:
-                if style == 'avg':
-                    feat = tf.reduce_mean(global_feat, axis=[1, 2], keepdims=True)
-                elif style == 'max':
-                    feat = tf.reduce_max(global_feat, axis=[1, 2], keepdims=True)
-                pool_feats.append(feat)
-            local_feat = tf.concat(pool_feats, 3)
+            if self.pooling_types == 'baseline':
+                feat_avg = tf.reduce_mean(global_feat, axis=[1, 2], keepdims=True)
+                feat_max = tf.reduce_max(global_feat, axis=[1, 2], keepdims=True)
+                local_feat = tf.concat([feat_avg, feat_max], 3)
+            elif self.pooling_types == 'gemm':
+                local_feat = tf.pow(
+                    tf.reduce_mean(
+                        tf.pow(tf.maximum(global_feat, 1e-6), 3),
+                        [1, 2], keepdims=True), 1. / 3)
             # if self.local_conv_out_channels:
             #     local_feat = self.batch_norm(local_feat, scope='pool')
             if self.dropout_place == 'before':

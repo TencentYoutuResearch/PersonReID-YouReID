@@ -27,7 +27,8 @@ model_config:
   last_conv_stride: 1
   dropout_place: after
   margin: 0.5
-  pooling_types: [avg, max]
+  pooling_types: baseline
+  non_local_block: 3
   non_local_type: single
   compression: 16
   with_pair_triplet: true
@@ -35,16 +36,16 @@ model_config:
 
 num_images_per_id: 4
 #
-data_root: /data1/home/fufuyu/dataset
+data_root: yourpath
 data:
   - name: market1501 #market1501 #market1501
     num_id: 8
 
-pretrain_root: your_path
+pretrain_root: yourpath
 pretrain_task: resnet50
 pretrain_model_step: 0
 
-task_id: cacenet
+task_id: cacenet_open
 
 save_max_to_keep: 2
 log_every_n_steps: 10

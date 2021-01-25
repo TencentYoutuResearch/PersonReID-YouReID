@@ -1,7 +1,8 @@
 # Devil’s in the Details: Aligning Visual Clues for Conditional Embedding in Person Re-Identification
 
 ## Introduction
-This is the tensorflow implementation of our paper "Devil’s in the Details: Aligning Visual Clues for Conditional Embedding in Person Re-Identification".
+This is the tensorflow implementation of our paper "Devil’s in the Details: Aligning Visual Clues for Conditional Embedding in Person Re-Identification"，
+which is submissed to CVPR2021.  the older paper version is ""
 In this paper:
 1) CACE-Net is able to integrate both visual clue alignment and conditional feature embedding into a unified ReID framework
 2) Instead of using a pre-defined Adjacency Matrix, our CACE-Net uses a novel correspondence attention module where the visual clues is automatically predicted and dynamically adjusted during training
@@ -15,11 +16,13 @@ tensorflow >= 1.8
 ## train
 ### Prepare Datasets
 1. File Directory:
+```
 ├── partitions.pkl
 ├── images
 │  ├── 0000000_0000_000000.png
 │  ├── 0000001_0000_000001.png
 │  ├── ...
+```
 
 2. Rename the images in following convention:
 "000000_000_000000.png"
@@ -34,6 +37,12 @@ This file contains a python dictionary storing meta data of the datasets, which 
 "val_im_names": [list of image names] #storing a list of names of validation images
 "test_im_names": [list of image names] #storing a list of names of testing images
 "test_marks"/"val_marks": [list of 0/1] #0/1 indicates if an image is in gallery
+
+you can run tools/transform_market1501.py to get the formatted dataset or download from [formatted market1501](https://drive.google.com/file/d/1tqRV9ECq3zufuGzXpCvk3SF5jJEa51EB/view?usp=sharing)
+
+### convert pretrained model
+our pretrained model is converted from torch official resnet model, you can run tools/convert_torch_to_tf.py to get them.
+Or you can download them from [convertedResnet](https://drive.google.com/file/d/1Lxhj9RpzwXerJ-p4lD4RmEnuaoIxDCdT/view?usp=sharing)
 
 ### train 
 1. Configure basic settings in core/config
@@ -51,7 +60,7 @@ This file contains a python dictionary storing meta data of the datasets, which 
 ```yaml
 yaml: 'experiment/graph/cacenet.yaml'
 ```
-market: [mAP: 90.11%], [cmc1: 95.84%]
+here is our log [cacenet_market_resnet50](https://drive.google.com/file/d/16NcFxuMAGTgt0rZUeEopQDYa3So1gscN/view?usp=sharing)
 
 ## peformance
 ![image](performance.png) 
