@@ -98,20 +98,20 @@ class VGTripletLoss(TripletLoss):
         # calc the distance of pg_global
         # dist = torch.zeros((n, n), device=global_inputs.device)
         if self.normalize_feature:
-            global_inputs = F.normalize(global_inputs, p=2, dim=1)  # global_inputs b * 512
+            global_inputs = F.normalize(global_inputs, p=2, dim=-1)  # global_inputs b * 512
 
         if self.normalize_feature:
-            partial_input = F.normalize(partial_input, p=2, dim=2)  # partial_input b * 6 * 256
+            partial_input = F.normalize(partial_input, p=2, dim=-1)  # partial_input b * 6 * 256
 
         pl = kwargs.get('part_labels')  # b * 6
 
         gs = torch.matmul(global_inputs, global_inputs.t())
-        gs = (1 + gs) / 2
+        gs = (1 - gs) / 2
 
         pl_0, pl_1 = pl.unsqueeze(1), pl.unsqueeze(0)
-        overlap = pl_0 * pl_1
+        overlap = pl_0 * pl_1  # b * b * 6
 
-        slf = (1. + torch.matmul(partial_input.permute(1, 0, 2), partial_input.permute(1, 2, 0))) / 2  # 6 * N * N
+        slf = (1. - torch.matmul(partial_input.permute(1, 0, 2), partial_input.permute(1, 2, 0))) / 2  # 6 * N * N
         slf = slf.permute(1, 2, 0) * overlap  # N * N * 6
 
         dist = (slf.sum(-1) + gs) / (overlap.sum(-1) + 1)
@@ -417,62 +417,75 @@ class MultiSimilarityLoss(nn.Module):
         return loss
 
 
-# class LSR_direction(nn.Module):
-#     """docstring for ClassName"""
-#
-#     def __init__(self, alpha=0.6, beta=0.15, topk=30):
-#         super(LSR_direction, self).__init__()
-#         self.alpha = alpha
-#         self.beta = beta
-#         self.topk = topk
-#         self.mask = None
-#         self.log_softmax = torch.nn.LogSoftmax()
-#
-#     def forward(self, inputs, targets, which_mask='mask'):  # torch.Size([256, 10431])  torch.Size([256])
-#         num_class = inputs.size()[1]
-#         if which_mask == 'mask':
-#             targets = self.mask[targets.data.cpu()]
-#         else:
-#             targets = self.mask2[targets.data.cpu()]
-#         targets = Variable(targets.cuda())
-#
-#         outputs = self.log_softmax(inputs)
-#         loss = - (targets * outputs)
-#         # print (loss.size(), 'lsr')
-#         loss = loss.sum(dim=1)
-#         # print (loss, 'lsr')
-#         loss = loss.mean(dim=0)
-#         return loss
-#
-#     def set_mask(self, same_id_list, num_class):
-#         print('self.alpha:', self.alpha, 'self.beta:', self.beta)
-#         mask = torch.FloatTensor(num_class, num_class)
-#         mask.zero_()
-#         tmp = torch.LongTensor(list(range(num_class)))
-#         tmp = torch.unsqueeze(tmp, 1)
-#         mask.scatter_(1, tmp, self.alpha)
-#         for id_list in same_id_list:
-#             if len(id_list) == 2:
-#                 mask[id_list[0], id_list[1]] = self.beta * 2
-#                 mask[id_list[1], id_list[0]] = self.beta * 2
-#                 mask[id_list[0]].add_((1 - self.alpha - self.beta * 2) / num_class)
-#                 mask[id_list[1]].add_((1 - self.alpha - self.beta * 2) / num_class)
-#             if len(id_list) == 3:
-#                 mask[id_list[0], id_list[1]] = self.beta
-#                 mask[id_list[0], id_list[2]] = self.beta
-#                 mask[id_list[1], id_list[0]] = self.beta
-#                 mask[id_list[1], id_list[2]] = self.beta
-#                 mask[id_list[2], id_list[0]] = self.beta
-#                 mask[id_list[2], id_list[1]] = self.beta
-#
-#                 mask[id_list[0]].add_((1 - self.alpha - 2 * self.beta) / num_class)
-#                 mask[id_list[1]].add_((1 - self.alpha - 2 * self.beta) / num_class)
-#                 mask[id_list[2]].add_((1 - self.alpha - 2 * self.beta) / num_class)
-#
-#         self.mask = mask
-#
-#     def set_alpha(self, option):
-#         self.alpha = option
-#
-#     def set_beta(self, option):
-#         self.beta = option
+class AdapativeCrossEntropyLabelSmooth(CrossEntropyLabelSmooth):
+    """Cross entropy loss with label smoothing regularizer.
+    Reference:
+    Szegedy et al. Rethinking the Inception Architecture for Computer Vision. CVPR 2016.
+    Equation: y = (1 - epsilon) * y + epsilon / K.
+    Args:
+        num_classes (int): number of classes.
+        epsilon (float): weight.
+    """
+    def __init__(self, num_classes, epsilon=0.1, use_gpu=True):
+        super(AdapativeCrossEntropyLabelSmooth, self).__init__(num_classes, epsilon, use_gpu)
+
+    def forward(self, inputs, targets):
+        """
+        Args:
+            inputs: prediction matrix (before softmax) with shape (batch_size, num_classes)
+            targets: ground truth labels with shape (num_classes)
+        """
+        log_probs = self.logsoftmax(inputs)
+        pt = torch.softmax(inputs, dim=1)[range(inputs.size(0)), targets] # b
+        targets = torch.zeros_like(log_probs).scatter_(1, targets.unsqueeze(1), 1)
+        epsilon = (self.epsilon * (1 - pt)).unsqueeze(dim=1).detach()
+        targets = (1 - epsilon) * targets + epsilon / self.num_classes
+        loss = (- targets * log_probs).mean(0).sum()
+        return loss
+
+class LSRWithDirection(CrossEntropyLabelSmooth):
+    """Cross entropy loss with label smoothing regularizer.
+    Reference:
+    Szegedy et al. Rethinking the Inception Architecture for Computer Vision. CVPR 2016.
+    Equation: y = (1 - epsilon) * y + epsilon / K.
+    Args:
+        num_classes (int): number of classes.
+        epsilon (float): weight.
+    """
+    def __init__(self, num_classes, epsilon=0.2, use_gpu=True, adaptive=True):
+        super(LSRWithDirection, self).__init__(num_classes, epsilon, use_gpu)
+        self.adaptive = adaptive
+
+    def forward(self, inputs, targets):
+        """
+        Args:
+            inputs: prediction matrix (before softmax) with shape (batch_size, num_classes)
+            targets: ground truth labels with shape (num_classes)
+        """
+        n, c = inputs.size()
+        assert c % self.num_classes == 0
+        log_probs = self.logsoftmax(inputs)
+
+        pt = torch.softmax(inputs, dim=1)  # b
+        direct_pt = pt.reshape((n, c // 3, 3))
+        class_pt = direct_pt.sum(dim=-1)
+
+        id_targets, direct_targets = targets
+        final_targets = id_targets * 3 + direct_targets
+
+        new_targets = torch.zeros_like(log_probs).scatter_(1, final_targets.unsqueeze(1), 1)
+        new_targets_2 = torch.zeros((n, c // 3), device=new_targets.device).scatter_(1, id_targets.unsqueeze(1), 1)
+        new_targets_2 = new_targets_2.unsqueeze(-1).repeat((1, 1, 3)).reshape((n, c))
+
+        if self.adaptive:
+            epsilon_1 = (self.epsilon * (1 - class_pt[range(n), id_targets])).unsqueeze(dim=1).detach()
+            epsilon_2 = (self.epsilon * (1 - pt[range(n), final_targets])).unsqueeze(dim=1).detach()
+        else:
+            epsilon_1 = self.epsilon
+            epsilon_2 = self.epsilon
+
+        new_targets = (1 - epsilon_1 - epsilon_2) * new_targets + epsilon_2 * (1 - new_targets_2) / (c - 3) + \
+                  epsilon_1 * (new_targets_2 - new_targets) / 2
+        loss = (- new_targets * log_probs).mean(0).sum()
+        return loss
+

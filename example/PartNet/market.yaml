@@ -38,7 +38,7 @@ model_config:
   name: PartNet
   num_layers: resnet50
   loss_type: ['softmax', 'triplet', 'vgtri'] #'softmax', 'labelsmooth', 'arcface'
-  margin: 0.5
+  margin: 0.3
   split_bn: true
   lamb: 0.9
   p_w: 0.

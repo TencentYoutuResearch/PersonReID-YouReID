@@ -222,7 +222,7 @@ class BaseTrainer(object):
                     'optimizer': optimizer.state_dict(),
                 }, root=config.get('task_id'), logger=self.logger)
 
-                if ocfg.get('epochs') - 10 <= epoch <= ocfg.get('epochs'):
+                if self.eval_status(epoch):
                     cur_mAP, _ = self.extract_and_eval(test_loader, model)
                     if cur_mAP > mAP:
                         mAP = cur_mAP
@@ -362,6 +362,10 @@ class BaseTrainer(object):
                                       )
                     break
             break
+
+    def eval_status(self, epoch):
+        ocfg = config.get('optm_config')
+        return ocfg.get('epochs') - 10 <= epoch <= ocfg.get('epochs')
 
     def save_feature(self, part, data, features, labels, paths):
         if not os.path.exists(config.get('task_id')):

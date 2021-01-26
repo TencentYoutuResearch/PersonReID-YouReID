@@ -57,6 +57,9 @@ class PartNetTrainer(BaseTrainer):
                 }
         return res
 
+    def eval_status(self, epoch):
+        return True
+
     def eval_result(self, **kwargs):
         info = kwargs.get('info')
         return evaluate.eval_part_result(info, use_pcb_format=config.get('use_pcb_format'), logger=self.logger)

@@ -1,22 +1,21 @@
 dataset_config:
   workers: 16
   train_class: FormatData #Market1501 #Occluded_Duke #Market1501 PartialOrOccluded
-  test_class: FormatData #FormatData
+  test_class: FormatData
   root: /raid/home/fufuyu/dataset
-  train_name : market1501
-  test_name : market1501 #msmt17_pcb  #market1501 Duke_pcb msmt17_pcb cuhk03_pcb
+  train_name: market1501 #market1501,,Duke_pcb,msmt17_pcb,cuhk03_pcb
+  test_name: market1501  #market1501 Duke_pcb msmt17_pcb
   part: train
   height: 384 #384
   width: 128
-  batch_size: 128 # 128 是fp32 2卡配置
+  batch_size: 64 # 128 是fp32 2卡配置
   load_img_to_cash: 0
   least_image_per_class: 4
   sample_image_per_class: 4
-  rnd_select_nid: 0  #default 0
+  rnd_select_nid: 0
   use_tf_sample: 0
   use_random_pad: 0
   mgn_style_aug: false
-#  mode: val
 
 optm_config:
   name: SGD
@@ -26,17 +25,14 @@ optm_config:
   momentum: 0.9
   epochs: 80
   start_epoch: 0
-  lr: 0.05  #128 0.05
+  lr: 0.025  #128 0.05
   resume: ''
 
 model_config:
-  name: VAAL
-  num_layers: resnet101_ibn_a
-  loss_type: ['softmax', 'labelsmooth', 'triplet'] #'softmax', 'labelsmooth', 'arcface'
+  name: MGN
+  num_layers: resnet101_ibn_a #resnext101_32x8d #resnet101_ibn_a
+  loss_type: ['softmax', 'triplet', 'labelsmooth'] #
   margin: 0.5
   split_bn: true
-#  use_non_local: true
-
-
 
 
