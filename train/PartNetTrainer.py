@@ -13,6 +13,46 @@ class PartNetTrainer(BaseTrainer):
     def __init__(self):
         super(PartNetTrainer, self).__init__()
 
+    def build_opt_and_lr(self, model):
+
+        if config.get('debug'):
+            lr_mul = 1
+        else:
+            lr_mul = len(config.get('gpus'))
+        ocfg = config.get('optm_config')
+        ignored_params = list(map(id, model.module.resnet.parameters()))
+        base_params = filter(lambda p: id(p) not in ignored_params, model.parameters())
+        cfg = config.get('dataset_config')
+        if cfg['train_name'] == 'market1501':
+            new_p_mul = 0.1
+        else:
+            new_p_mul = 1.
+        param_groups = [
+            {'params': model.module.resnet.parameters(), 'lr': ocfg['lr'] * new_p_mul * lr_mul},
+            {'params': base_params}
+                        ]
+        if ocfg['name'] == 'SGD':
+            optimizer = torch.optim.SGD(param_groups, ocfg['lr'] * lr_mul,
+                                        momentum=ocfg['momentum'],
+                                        weight_decay=ocfg['weight_decay'])
+        else:
+            optimizer = torch.optim.Adam(param_groups, ocfg['lr'] * lr_mul,
+                                         weight_decay=ocfg['weight_decay'])
+
+        if 'multistep' in ocfg and ocfg['multistep']:
+            lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
+                                                                ocfg['step'],
+                                                                gamma=ocfg['gamma'],
+                                                                last_epoch=-1)
+        else:
+            lr_scheduler = CosineAnnealingWarmUp(optimizer,
+                                             T_0=5,
+                                             T_end=ocfg.get('epochs'),
+                                             warmup_factor=ocfg.get('warmup_factor'),
+                                             last_epoch=-1)
+        self.logger.write(optimizer)
+        return optimizer, lr_scheduler
+
     def extract(self, test_data, model):
         model.eval()
         res = {}
@@ -58,7 +98,12 @@ class PartNetTrainer(BaseTrainer):
         return res
 
     def eval_status(self, epoch):
-        return True
+        cfg = config.get('dataset_config')
+        if cfg['train_name'] == 'market1501':
+            return True
+        else:
+            ocfg = config.get('optm_config')
+            return ocfg.get('epochs') - 10 <= epoch <= ocfg.get('epochs')
 
     def eval_result(self, **kwargs):
         info = kwargs.get('info')
