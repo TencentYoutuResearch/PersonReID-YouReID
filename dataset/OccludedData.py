@@ -36,9 +36,6 @@ class OccludedDuke(FormatData):
             contrast = kwargs.get('contrast')
             saturation = kwargs.get('saturation')
             hue = kwargs.get('hue')
-            # sl = kwargs.get('sl')
-            # sh = kwargs.get('sh')
-            # r1 = kwargs.get('r1')
 
             transform_train_list = []
             if brightness is not None or contrast is not None or saturation is not None or hue is not None:
@@ -263,8 +260,10 @@ class OccludedReID(OccludedDuke):
             if not filenames:
                 continue
             for name in filenames:
+                if name.startswith('.'):
+                    continue
                 imgpath = os.path.join(dirpath, name)
-                class_id = int(name.split('_')[0])
+                class_id = int(name.split('.')[0].split('_')[0])
                 imgs.append((imgpath, class_id, int(for_query)))
         return imgs, []
 

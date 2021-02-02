@@ -107,7 +107,7 @@ class PartNetTrainer(BaseTrainer):
 
     def eval_result(self, **kwargs):
         info = kwargs.get('info')
-        return evaluate.eval_part_result(info, use_pcb_format=config.get('use_pcb_format'), logger=self.logger)
+        return evaluate.eval_part_result(info, use_pcb_format=config.get('use_pcb_format', True), logger=self.logger)
 
     def extract_and_eval(self, test_loader, model):
         res = self.extract(test_loader, model)

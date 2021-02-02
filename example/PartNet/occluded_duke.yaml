@@ -38,6 +38,6 @@ model_config:
   split_bn: true
 #  use_non_local: true
 
-
+use_pcb_format: true
 
 

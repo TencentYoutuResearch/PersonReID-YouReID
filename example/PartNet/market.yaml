@@ -4,7 +4,7 @@ dataset_config:
   test_class: OccludedReID #FormatData
   root: /raid/home/fufuyu/dataset
   train_name : market1501
-  test_name : Occluded_REID #msmt17_pcb  #market1501 Duke_pcb msmt17_pcb cuhk03_pcb
+  test_name : Partial_iLIDS  # Occluded_REID Partial_iLIDS Partial-REID_Dataset
   part: train
   height: 384
   width: 128
@@ -46,6 +46,8 @@ model_config:
 #  use_non_local: true
 
 use_pcb_format: false
+
+
 
 
 
