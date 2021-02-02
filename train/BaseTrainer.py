@@ -166,8 +166,13 @@ class BaseTrainer(object):
             optimizer = torch.optim.Adam(parameters, ocfg['lr'] * lr_mul,
                                          weight_decay=ocfg['weight_decay'])
 
-        # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.step, gamma=0.1, last_epoch=-1)
-        lr_scheduler = CosineAnnealingWarmUp(optimizer,
+        if 'multistep' in ocfg and ocfg['multistep']:
+            lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
+                                                                ocfg['step'],
+                                                                gamma=ocfg['gamma'],
+                                                                last_epoch=-1)
+        else:
+            lr_scheduler = CosineAnnealingWarmUp(optimizer,
                                              T_0=5,
                                              T_end=ocfg.get('epochs'),
                                              warmup_factor=ocfg.get('warmup_factor'),
