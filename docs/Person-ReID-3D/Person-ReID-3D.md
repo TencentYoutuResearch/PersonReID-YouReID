@@ -6,7 +6,7 @@ Code for paper [Learning 3D Shape Feature for Texture-insensitive Person Re-iden
 It is well acknowledged that person re-identification (person ReID) highly relies on visual and texture information like clothing. Despite significant progress have been made in recent years, texture-confusing situations like clothing changing or persons wearing the same clothes  are beyond the ability of most existing ReID methods. In this paper, rather than relying on texture based information, we propose to improve the robustness of person ReID to clothing texture by exploiting the information of a person's 3D shape. Existing shape learning schemas for person ReID either ignore the 3D information of person, or require extra physical devices to collect 3D source data. Instead we propose a novel ReID learning framework that directly extracts a texture-insensitive 3D shape embedding from a 2D image by adding 3D body reconstruction as an auxiliary task and regularization, called 3D Shape Learning (3DSL). Extensive experiments on common person ReID datasets and texture-confusing datasets validate the effectiveness of our model.
 
 ## Model Framework
-![Framework](fig/model3D.png)
+![Framework](fig/model3d.png)
 
 ## Citation
 If you are interested in this work, please cite our paper
