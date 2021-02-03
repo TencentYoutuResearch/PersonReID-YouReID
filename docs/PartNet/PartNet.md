@@ -9,10 +9,10 @@ Person re-identification (ReID) has gain an impressive progress in recent yeas. 
 ||Partial-REID<br>rank-1&rank-3</br>|Partial-iLIDS<br>rank-1&rank-3</br>|Occluded-REID<br>mAP&rank-1</br>|Occluded-Duke<br>mAP&rank-1</br>|
 |:-:|:-:|:-:|:-:|:-:|
 |paper|85.7/93.7|80.7/88.2|71.0/81.0|46.3/62.2|
-|this implement|85.3/91.3|79.0/89.1|72.1/80.9|50。00/60.18|
+|this implement|85.3/91.3|79.0/89.1|72.1/80.9|50.00/60.18|
 
 
-![Framework](figures/Performance.png)
+![Framework](figures/performance.png)
 
 
 ## config
