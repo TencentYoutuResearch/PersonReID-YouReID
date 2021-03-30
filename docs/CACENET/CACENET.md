@@ -4,6 +4,7 @@ Devil's in the Details: Aligning Visual Clues for Conditional Embedding in Perso
 
 ![image](cacenet_pipeline.png)
 
+Here is our another tensorflow implementation [CACENET](https://github.com/TencentYoutuResearch/PersonReID-CACENET).
 ## peformance 
 
 ![image](performance.png)
