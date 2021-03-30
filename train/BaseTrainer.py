@@ -20,6 +20,7 @@ from utils import *
 from core.config import config
 from core.loss import normalize
 from core.layers import convert_dsbnConstBatch
+from torch.nn.modules.upsampling import Upsample
 
 os.environ['CUDA_VISIBLE_DEVICES'] = ','.join([str(x) for x in config.get('gpus')])
 
@@ -31,6 +32,7 @@ class BaseTrainer(object):
 
     def init_distirbuted_mode(self):
         """"""
+        print(os.environ['CUDA_VISIBLE_DEVICES'], os.environ['WORLD_SIZE'], os.environ['RANK'], os.environ['LOCAL_RANK'])
         dist.init_process_group(backend="nccl", world_size=int(os.environ['WORLD_SIZE']), rank=int(os.environ['RANK']))
         torch.cuda.set_device(int(os.environ['LOCAL_RANK']))
 
@@ -44,7 +46,7 @@ class BaseTrainer(object):
                       'You may see unexpected behavior when restarting '
                       'from checkpoints.')
 
-    def build_dataset(self):
+    def build_dataset(self, target_w_train=False):
         cfg = config.get('dataset_config')
         params = cfg.get('kwargs') if cfg.get('kwargs') else {}
         params['logger'] = self.logger
@@ -56,12 +58,12 @@ class BaseTrainer(object):
                                                            **params
                                                            )
         if config.get('debug'):
-            source_train_sampler = RandomIdentitySampler(source_data, cfg['batch_size'],
+            source_train_sampler = RandomIdentitySampler(source_data.imgs, cfg['batch_size'],
                                                          cfg['least_image_per_class'],
                                                          cfg['use_tf_sample']
                                                          )
         else:
-            source_train_sampler = DistributeRandomIdentitySampler(source_data, cfg['batch_size'],
+            source_train_sampler = DistributeRandomIdentitySampler(source_data.imgs, cfg['batch_size'],
                                                                    cfg['sample_image_per_class'],
                                                                    cfg['use_tf_sample'],
                                                                    rnd_select_nid=cfg['rnd_select_nid'],
@@ -73,15 +75,6 @@ class BaseTrainer(object):
         )
 
         target_loader = {
-            # 'train':
-            #     torch.utils.data.DataLoader(
-            #         dataset.__dict__[cfg['test_class']](root=cfg['root'], dataname=cfg['test_name'],
-            #                                             part='train', mode='val',
-            #                                             require_path=True, size=(cfg['height'], cfg['width']),
-            #                                             **params
-            #                                             ),
-            #         batch_size=cfg['batch_size'], shuffle=False, num_workers=cfg['workers'], pin_memory=True)
-            # ,
             'query':
                 torch.utils.data.DataLoader(
                     dataset.__dict__[cfg['test_class']](root=cfg['root'], dataname=cfg['test_name'], part='query',
@@ -98,6 +91,15 @@ class BaseTrainer(object):
                                                         ),
                     batch_size=cfg['batch_size'], shuffle=False, num_workers=cfg['workers'], pin_memory=True),
         }
+
+        if target_w_train:
+            target_loader['train'] = torch.utils.data.DataLoader(
+                    dataset.__dict__[cfg['test_class']](root=cfg['root'], dataname=cfg['test_name'],
+                                                        part='train', mode='val',
+                                                        require_path=True, size=(cfg['height'], cfg['width']),
+                                                        **params
+                                                        ),
+                    batch_size=cfg['batch_size'], shuffle=False, num_workers=cfg['workers'], pin_memory=True)
 
         return source_train_loader, target_loader
 
@@ -159,11 +161,11 @@ class BaseTrainer(object):
             lr_mul = len(config.get('gpus'))
         ocfg = config.get('optm_config')
         if ocfg['name'] == 'SGD':
-            optimizer = torch.optim.SGD(parameters, ocfg['lr'] * lr_mul,
+            optimizer = torch.optim.SGD(parameters, float(ocfg['lr']) * lr_mul,
                                         momentum=ocfg['momentum'],
                                         weight_decay=ocfg['weight_decay'])
         else:
-            optimizer = torch.optim.Adam(parameters, ocfg['lr'] * lr_mul,
+            optimizer = torch.optim.Adam(parameters, float(ocfg['lr']) * lr_mul,
                                          weight_decay=ocfg['weight_decay'])
 
         if 'multistep' in ocfg and ocfg['multistep']:
@@ -180,7 +182,7 @@ class BaseTrainer(object):
         self.logger.write(optimizer)
         return optimizer, lr_scheduler
 
-    def load_ckpt(self, model, optimizer=None, ckpt_path=None):
+    def load_ckpt(self, model, optimizer=None, ckpt_path=None, add_module_prefix=False):
         """"""
         ocfg = config.get('optm_config')
         start_epoch = ocfg.get('start_epoch')
@@ -197,7 +199,14 @@ class BaseTrainer(object):
                 start_epoch = checkpoint['epoch']
                 if optimizer:
                     optimizer.load_state_dict(checkpoint['optimizer'])
-            model.load_state_dict(checkpoint['state_dict'], strict=True)
+            if add_module_prefix:
+                params_names = checkpoint['state_dict'].keys()
+                new_map = {}
+                for k in params_names:
+                    new_map['module.' + k] = checkpoint['state_dict'][k]
+            else:
+                new_map = checkpoint['state_dict']
+            model.load_state_dict(new_map, strict=True)
             self.logger.write("=> loaded checkpoint '{}' (epoch {})"
                               .format(ckpt, checkpoint['epoch']))
             del checkpoint
@@ -317,7 +326,10 @@ class BaseTrainer(object):
                     # compute output
                     outputs = model(input)
                     if isinstance(outputs, (list, tuple)):
-                        feat = normalize(torch.cat([normalize(x) for x in outputs[1]], dim=1))
+                        if isinstance(outputs[1], (list, tuple)):
+                            feat = normalize(torch.cat([normalize(x) for x in outputs[1]], dim=1))
+                        else:
+                            feat = normalize(outputs[1])
                     else:
                         feat = normalize(outputs)
                     #

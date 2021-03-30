@@ -1,0 +1,44 @@
+dataset_config:
+  workers: 16
+  train_class: FormatData 
+  test_class: FormatData 
+  root: /raid/home/fufuyu/dataset
+  train_name : market1501
+  test_name : Duke_pcb
+  part: train
+  height: 256
+  width: 128
+  batch_size: 64 
+  load_img_to_cash: 0
+  least_image_per_class: 4
+  sample_image_per_class: 4
+  rnd_select_nid: 0  
+  use_tf_sample: 0
+  use_random_pad: 0
+  mgn_style_aug: false
+
+optm_config:
+  name: Adam
+  mode: train
+  weight_decay: 0.0005
+  warmup_factor: 0.
+  momentum: 0.9
+  iteration: 10
+  epochs: 30
+  start_epoch: 0
+  resume: ''
+  multistep: true
+  lr: 6e-5
+  step: [60,70,80,90]
+  gamma: 0.5
+
+model_config:
+  name: ACTNet
+  num_layers: resnet50
+  loss_type: ['triplet']
+  margin: 0.5
+  split_bn: false
+
+
+ckpt_path: /raid/home/fufuyu/snapshot/pretrained/ACT_pretrain/logMar/adaM2D.pth
+#ckpt_path: ../../snapshot/ACT/test/checkpoint.pth

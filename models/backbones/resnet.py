@@ -1,6 +1,7 @@
 import os
 import math
 import torch
+import torchvision
 from torch import nn
 from torch.utils import model_zoo
 from core.layers import NonLocal, IBN
@@ -24,7 +25,7 @@ class Bottleneck(nn.Module):
 
     def __init__(self, inplanes, planes, ibn=False,
                  stride=1, downsample=None, groups=1, base_width=64,
-                 use_non_local=False
+                 use_non_local=False, use_last_relu=True
                  ):
         super(Bottleneck, self).__init__()
 
@@ -44,6 +45,7 @@ class Bottleneck(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
+        self.use_last_relu = use_last_relu
         # GCNet
 
         self.use_non_local = use_non_local
@@ -69,7 +71,8 @@ class Bottleneck(nn.Module):
             residual = self.downsample(x)
 
         out += residual
-        out = self.relu(out)
+        if self.use_last_relu:
+            out = self.relu(out)
 
         if self.use_non_local:
             out = self.non_local_block(out)
@@ -80,7 +83,7 @@ class Bottleneck(nn.Module):
 class ResNet(nn.Module):
     def __init__(self, last_stride,
                  block, layers, model_name, use_non_local=False,
-                 groups=1, width_per_group=64):
+                 groups=1, width_per_group=64, use_last_relu=True):
 
         self.inplanes = 64
         self.groups = groups
@@ -97,10 +100,11 @@ class ResNet(nn.Module):
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2, use_non_local=use_non_local)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2, use_non_local=use_non_local)
         self.layer4 = self._make_layer(block, 512, layers[3],
-                                       stride=last_stride, use_non_local=use_non_local)
+                                       stride=last_stride,
+                                       use_non_local=use_non_local, use_last_relu=use_last_relu)
 
     def _make_layer(self, block, planes, blocks, stride=1,
-                    use_non_local=False):
+                    use_non_local=False, use_last_relu=True):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
@@ -116,10 +120,12 @@ class ResNet(nn.Module):
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
             use_non_local_flag = use_non_local and i == blocks - 2
+            use_last_relu_flag = False if (not use_last_relu and i == blocks -1) else True
             layers.append(block(self.inplanes, planes,
                                 groups=self.groups,
                                 base_width=self.base_width,
-                                use_non_local=use_non_local_flag
+                                use_non_local=use_non_local_flag,
+                                use_last_relu=use_last_relu_flag
                                 ))
 
         return nn.Sequential(*layers)
@@ -184,7 +190,7 @@ def _resnet(pretrained, last_stride, block,
     return model
 
 
-def resnet50(pretrained=False, last_stride=1, use_non_local=False, model_path=''):
+def resnet50(pretrained=False, last_stride=1, use_non_local=False, model_path='', **kwargs):
     """Constructs a ResNet-50 model.
 
     Args:
@@ -193,7 +199,7 @@ def resnet50(pretrained=False, last_stride=1, use_non_local=False, model_path=''
     """
     return _resnet(pretrained=pretrained, last_stride=last_stride,
                    block=Bottleneck, layers=[3, 4, 6, 3], use_non_local=use_non_local,
-                   model_path=model_path, model_name='resnet50')
+                   model_path=model_path, model_name='resnet50', **kwargs)
 
 
 def resnet101(pretrained=False, last_stride=1, use_non_local=False, model_path=''):

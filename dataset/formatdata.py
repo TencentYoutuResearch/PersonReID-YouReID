@@ -93,8 +93,14 @@ class FormatData(data.Dataset):
         self.logger = kwargs.get('logger', print)
         self.mode = kwargs.get('mode', 'train')
         self.return_cam = kwargs.get('return_cam', False)
+        imgs = kwargs.get('imgs', None)
+        if imgs is not None:
+            self.class_num = kwargs.get('classes', 0)
+        else:
+            imgs, classes = self.build_imgs()
+            self.class_num = len(classes)
 
-        imgs, classes = self.build_imgs()
+        self.imgs = imgs
 
         if default_transforms is None:
             self.transform = transforms.Compose([
@@ -131,10 +137,9 @@ class FormatData(data.Dataset):
         else:
             self.transform = default_transforms
 
-        self.imgs = imgs
-        self.classes = classes
+
         self.len = len(imgs)
-        self.class_num = len(classes)
+
 
         if self.load_img_to_cash:
             self.cash_imgs = []
@@ -172,7 +177,10 @@ class FormatData(data.Dataset):
                 label = trainval_ids2labels[id]
                 imgs.append((os.path.join(self.root, 'images', im_name), label, cam))
 
-            classes, imgs = self._postprocess(imgs, self.least_image_per_class)
+            if self.mode == 'train':
+                classes, imgs = self._postprocess(imgs, self.least_image_per_class)
+            else:
+                classes, imgs = self._postprocess(imgs, 1)
         else:
             if len(partitions['test_im_names']) > 0:
                 img_list = partitions['test_im_names']

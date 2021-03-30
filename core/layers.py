@@ -40,7 +40,6 @@ class GeneralizedMeanPooling(nn.Module):
                + str(self.p) + ', ' \
                + 'output_size=' + str(self.output_size) + ')'
 
-
 class GeneralizedMeanPoolingP(GeneralizedMeanPooling):
     """ Same, but norm is trainable
     """
@@ -48,6 +47,35 @@ class GeneralizedMeanPoolingP(GeneralizedMeanPooling):
     def __init__(self, norm=3, output_size=1, eps=1e-6):
         super(GeneralizedMeanPoolingP, self).__init__(norm, output_size, eps)
         self.p = nn.Parameter(torch.ones(1) * norm)
+
+
+# class GeneralizedMeanPoolingCP(GeneralizedMeanPooling):
+#     """ Same, but norm is trainable
+#     """
+#
+#     def __init__(self, norm=3, output_size=1, eps=1e-6):
+#         super(GeneralizedMeanPoolingCP, self).__init__(norm, output_size, eps)
+#         self.p = nn.Parameter(torch.ones((1, 1, 1, 1)) * norm)
+
+
+class SplitValuePooling(nn.Module):
+
+
+    def __init__(self):
+        super(SplitValuePooling, self).__init__()
+        # self.gap = nn.AdaptiveAvgPool2d(1)
+        self.gap1 = GeneralizedMeanPoolingP()
+        self.gap2 = GeneralizedMeanPoolingP()
+
+    def forward(self, x):
+        # < 0
+        x1 = torch.max(-x, other=torch.zeros_like(x, device=x.device))
+        x1 = self.gap1(x1)
+        # > 0
+        x2 = torch.max(x, other=torch.zeros_like(x, device=x.device))
+        x2 = self.gap2(x2)
+
+        return torch.cat([x1, x2], dim=1)
 
 
 class NonLocal(nn.Module):

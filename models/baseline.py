@@ -1,5 +1,5 @@
 from core.loss import *
-from core.layers import GeneralizedMeanPoolingP
+from core.layers import GeneralizedMeanPoolingP, SplitValuePooling
 from .backbones import model_zoo
 
 
@@ -14,13 +14,16 @@ class Baseline(nn.Module):
                  pool_type='baseline',
                  loss_type=None,
                  margin=0.5,
-                 use_non_local=False
+                 use_non_local=False,
+                 use_last_relu=True,
+                 arcface_param=None
                  ):
         super(Baseline, self).__init__()
         if loss_type is None:
             loss_type = ['softmax, triplet']
         kwargs = {
-            'use_non_local': use_non_local
+            'use_non_local': use_non_local,
+            'use_last_relu': use_last_relu,
         }
         self.resnet = model_zoo[num_layers](
             pretrained=True, last_stride=last_stride,
@@ -38,7 +41,9 @@ class Baseline(nn.Module):
             input_dim = 2048
         elif self.pool_type == 'norm':
             input_dim = 2048
-
+        elif self.pool_type == 'split':
+            self.pool = SplitValuePooling()
+            input_dim = 4096
         self.embedding_layer = nn.Conv2d(input_dim, reduce_dim,
                                          kernel_size=1, stride=1, bias=False
                                          )
@@ -55,7 +60,10 @@ class Baseline(nn.Module):
             else:
                 self.ce_loss = nn.CrossEntropyLoss()  # .cuda()
         elif 'arcface' in self.loss_type:
-            self.fc_layer = ArcMarginProduct(reduce_dim, num_classes)
+            if arcface_param:
+                self.fc_layer = ArcMarginProduct(reduce_dim, num_classes, **arcface_param)
+            else:
+                self.fc_layer = ArcMarginProduct(reduce_dim, num_classes)
             if 'labelsmooth' in self.loss_type:
                 self.ce_loss = CrossEntropyLabelSmooth(num_classes)
             else:
@@ -97,6 +105,8 @@ class Baseline(nn.Module):
             score = torch.softmax(x.view((b, c, h*w)), dim=-1)
             score = score.view((b, c, h, w))
             x = torch.sum(x * score, dim=[2, 3], keepdim=True)
+        elif self.pool_type == 'split':
+            x = self.pool(x)
 
         x = self.embedding_layer(x)
         x = self.bn(x).squeeze(dim=3).squeeze(dim=2)

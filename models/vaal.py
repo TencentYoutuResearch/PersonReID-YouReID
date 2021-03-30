@@ -243,7 +243,7 @@ class VAALArcface(nn.Module):
             if stripe == 1:
                 num_fc = stripe
                 embedding_layers = copy.deepcopy(reduction)
-                fc_layer =
+                # fc_layer =
             fc_layers = nn.ModuleList([copy.deepcopy(fc_layer) for _ in range(num_fc)])
             branches.append(
                 nn.ModuleList([

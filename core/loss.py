@@ -27,12 +27,12 @@ class TripletLoss(nn.Module):
         margin (float, optional): margin for triplet. Default is 0.3.
     """
 
-    def __init__(self, margin=0.3, normalize_feature=True):
+    def __init__(self, margin=0.3, normalize_feature=True, reduce='mean'):
         super(TripletLoss, self).__init__()
         self.margin = margin
         self.normalize_feature = normalize_feature
         if margin > 0 :
-            self.ranking_loss = nn.MarginRankingLoss(margin=margin)
+            self.ranking_loss = nn.MarginRankingLoss(margin=margin, reduction=reduce)
         else:
             self.ranking_loss = nn.SoftMarginLoss()
 
@@ -260,7 +260,7 @@ class ArcMarginProduct(nn.Module):
             m: margin
             cos(theta + m)
         """
-    def __init__(self, in_features, out_features, s=64.0, m=0.50, easy_margin=True):
+    def __init__(self, in_features, out_features, s=64.0, m=0.50, easy_margin=False):
         super(ArcMarginProduct, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -270,10 +270,10 @@ class ArcMarginProduct(nn.Module):
         nn.init.xavier_uniform_(self.weight)
 
         self.easy_margin = easy_margin
-        self.cos_m = math.cos(m)
-        self.sin_m = math.sin(m)
-        self.th = math.cos(math.pi - m)
-        self.mm = math.sin(math.pi - m) * m
+        self.cos_m = torch.tensor(math.cos(m))
+        self.sin_m = torch.tensor(math.sin(m))
+        self.th = torch.tensor(math.cos(math.pi - m))
+        self.mm = torch.tensor(math.sin(math.pi - m) * m)
 
     def extra_repr(self) -> str:
         return 'in_features={}, out_features={}'.format(
@@ -284,8 +284,15 @@ class ArcMarginProduct(nn.Module):
         # --------------------------- cos(theta) & phi(theta) ---------------------------
         #print(input.size(), self.weight.size())
         cosine = F.linear(F.normalize(input), F.normalize(self.weight))
-        angles = torch.acos(torch.clamp(cosine, -1, 1))
-        phi = torch.cos(angles + self.m)
+        # angles = torch.acos(torch.clamp(cosine, -1, 1))
+        # phi = torch.cos(angles + self.m)
+        sine = torch.sqrt((1.0 - torch.pow(cosine, 2)).clamp(0, 1))
+        phi = cosine * self.cos_m - sine * self.sin_m
+        if self.easy_margin:
+            phi = torch.where(cosine > 0, phi, cosine)
+        else:
+            phi = torch.where(cosine > self.th, phi, cosine - self.mm)
+
         one_hot = torch.zeros(cosine.size(), device='cuda')
         one_hot.scatter_(1, label.view(-1, 1).long(), 1)
         # -------------torch.where(out_i = {x_i if condition_i else y_i) -------------

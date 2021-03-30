@@ -1,23 +1,23 @@
-# [Asymmetric Co-Teaching for Unsupervised Cross Domain Person Re-Identification](https://ojs.aaai.org/index.php/AAAI/article/download/6950/6804)
+# [Asymmetric Co-Teaching for Unsupervised Cross Domain Person Re-Identification (AAAI 2020)](https://arxiv.org/abs/1912.01349). 
 
-Asymmetric Co-Teaching for Unsupervised Cross Domain Person Re-Identification is our paper published in AAAI2020. In this paper, we design an asymmetric co-teaching framework, which resists noisy labels by cooperating two models to select data with possibly clean labels for each other. Meanwhile, one of the models receives samples as pure as possible, while the other takes in samples as diverse as possible. This procedure encourages that the selected training samples can be both clean and miscellaneous, and that the two models can promote each other iteratively.
-![image](./ACT.png)
+### Framework
+![Framework](figures/framework.jpg)
 
-## peformance 
-![image](performance.jpg)
+### Original Repo
+https://github.com/FlyingRoastDuck/ACT_AAAI20
 
 
+### Performance
+![Results](figures/ACT.jpg)
+![Results](figures/MSMT.jpg)
 
-## Citation
-If you find this code useful, please cite the following paper:
-
+### Citation
+If you are interested in this work, please cite our paper
 ```
 @inproceedings{yang2020asymmetric,
-  title={Asymmetric co-teaching for unsupervised cross-domain person re-identification},
+  title={Asymmetric Co-Teaching for Unsupervised Cross-Domain Person Re-Identification.},
   author={Yang, Fengxiang and Li, Ke and Zhong, Zhun and Luo, Zhiming and Sun, Xing and Cheng, Hao and Guo, Xiaowei and Huang, Feiyue and Ji, Rongrong and Li, Shaozi},
-  booktitle={Proceedings of the AAAI Conference on Artificial Intelligence},
-  volume={34},
-  number={07},
+  booktitle={AAAI},
   pages={12597--12604},
   year={2020}
 }

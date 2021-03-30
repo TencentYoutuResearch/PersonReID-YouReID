@@ -35,6 +35,8 @@ model_config:
   loss_type: ['softmax', 'labelsmooth', 'triplet'] #'softmax', 'labelsmooth', 'arcface'
   margin: 0.5
   split_bn: true
+  use_last_relu: false
+  pool_type: split
 #  use_non_local: true
 
 
