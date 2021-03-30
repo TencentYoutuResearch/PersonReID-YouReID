@@ -11,7 +11,7 @@ this project provides the following algorithms and scripts to run them. Please s
         <th>Field</th><th>ABBRV</th><th>Algorithms</th><th>Description</th><th>Status</th>
     </tr>
     <tr>
-	<td rowspan="3">SL</td><td>CACENET</td><td><a href="https://arxiv.org/abs/2009.05250">Devil's in the Details: Aligning Visual Clues for Conditional Embedding in Person Re-Identification</a></td><td><a href="docs/CACENET/CACENET.md">CACENET.md</a></td><td>finished</td>
+	<td rowspan="2">SL</td><td>CACENET</td><td><a href="https://arxiv.org/abs/2009.05250">Devil's in the Details: Aligning Visual Clues for Conditional Embedding in Person Re-Identification</a></td><td><a href="docs/CACENET/CACENET.md">CACENET.md</a></td><td>finished</td>
     </tr>
     <tr>
         <td>Pyramid</td><td><a href="https://openaccess.thecvf.com/content_CVPR_2019/papers/Zheng_Pyramidal_Person_Re-IDentification_via_Multi-Loss_Dynamic_Training_CVPR_2019_paper.pdf">Pyramidal Person Re-IDentification via Multi-Loss Dynamic Training</a></td><td><a href="docs/Pyramid/CVPR-2019-Pyramid.md">CVPR-2019-Pyramid.md</a></td><td>finished</td>
@@ -29,7 +29,7 @@ this project provides the following algorithms and scripts to run them. Please s
 	<td>Text </td><td>NAFS</td><td><a href="https://arxiv.org/abs/1911.12512">NAFS</a></td><td><a href="docs/NAFS/NAFS.md">NAFS.md</a></td><td>comming soon</td>
 	</tr>
 	<tr>
-	<td>3D </td><td>Person-ReID-3D</td><td><a href="https://arxiv.org/abs/1911.12512">Person-ReID-3D</a></td><td><a href="docs/Person-ReID-3D/Person-ReID-3D.md">Person-ReID-3D.md</a></td><td>coming soon</td>
+	<td>3D </td><td>Person-ReID-3D</td><td>Person-ReID-3D</td><td><a href="docs/Person-ReID-3D/CVPR-2021-PR3D.md">CVPR-2021-PR3D.md</a></td><td>coming soon</td>
 	</tr>
 </table>
 
