@@ -26,7 +26,7 @@ this project provides the following algorithms and scripts to run them. Please s
 	<td>Video </td><td>TSF</td><td><a href="https://arxiv.org/abs/1911.12512">Rethinking Temporal Fusion for Video-based Person Re-identification on Semantic and Time Aspect</a></td><td><a href="docs/TSF/AAAI-2020-TSF.md">AAAI-2020-TSF.md</a></td><td>comming soon</td>
 	</tr>
 	<tr>
-	<td>Text </td><td>NAFS</td><td><a href="https://arxiv.org/abs/1911.12512">NAFS</a></td><td><a href="docs/NAFS/NAFS.md">NAFS.md</a></td><td>comming soon</td>
+	<td>Text </td><td>NAFS</td><td><a href="https://arxiv.org/pdf/2101.03036">Contextual Non-Local Alignment over Full-Scale Representation for Text-Based Person Search</a></td><td><a href="docs/NAFS/NAFS.md">NAFS.md</a></td><td>comming soon</td>
 	</tr>
 	<tr>
 	<td>3D </td><td>Person-ReID-3D</td><td>Person-ReID-3D</td><td><a href="docs/Person-ReID-3D/CVPR-2021-PR3D.md">CVPR-2021-PR3D.md</a></td><td>coming soon</td>
@@ -42,11 +42,13 @@ Please install `Python>=3.6` and `PyTorch>=1.6.0`.
 Download the public datasets(like market1501 and DukeMTMC), organize these datasets using the following format:
 
 File Directory:
+```
 ├── partitions.pkl
 ├── images
 │ ├── 0000000_0000_000000.png
 │ ├── 0000001_0000_000001.png
 │ ├── ...
+```
 
 1. Rename the images in following convention:
 "000000_000_000000.png" where the first substring splitted by underline is the person identity;
@@ -67,7 +69,7 @@ you can run tools/transform_format.py to get the formatted dataset or download f
 
 #### Clone this github repository:
 ```
-git clone this github repository
+git clone this repository
 ```
 
 #### train
@@ -86,22 +88,7 @@ cd train && ./cmd.sh
 
 ## Citation
 If you are interested in our works, please cite our papers
-```
-@article{yu2020devil,
-  title={Devil's in the Details: Aligning Visual Clues for Conditional Embedding in Person Re-Identification},
-  author={Yu, Fufu and Jiang, Xinyang and Gong, Yifei and Zhao, Shizhen and Guo, Xiaowei and Zheng, Wei-Shi and Zheng, Feng and Sun, Xing},
-  journal={arXiv e-prints},
-  pages={arXiv--2009},
-  year={2020}
-}
-@inproceedings{zheng2019pyramidal,
-  title={Pyramidal Person Re-IDentification via Multi-Loss Dynamic Training},
-  author={Zheng, Feng and Deng, Cheng and Sun, Xing and Jiang, Xinyang and Guo, Xiaowei and Yu, Zongqiao and Huang, Feiyue and Ji, Rongrong},
-  booktitle={Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition},
-  pages={8514--8522},
-  year={2019}
-}
-```
+
 
 
 
