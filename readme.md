@@ -16,20 +16,17 @@ this project provides the following algorithms and scripts to run them. Please s
     <tr>
         <td>Pyramid</td><td><a href="https://openaccess.thecvf.com/content_CVPR_2019/papers/Zheng_Pyramidal_Person_Re-IDentification_via_Multi-Loss_Dynamic_Training_CVPR_2019_paper.pdf">Pyramidal Person Re-IDentification via Multi-Loss Dynamic Training</a></td><td><a href="docs/Pyramid/CVPR-2019-Pyramid.md">CVPR-2019-Pyramid.md</a></td><td>finished</td>
     </tr>
-    <tr>
-        <td>VAAL</td><td><a href="https://arxiv.org/abs/1912.01300">Viewpoint-Aware Loss with Angular Regularization for Person Re-Identification</a></td><td><a href="docs/VAAL/AAAI-2020-VAAL.md">AAAI-2020-VAAL.md</a></td><td>coming soon</td>
-    </tr>
 	<tr>
-	<td>UDA</td><td>ACT</td><td><a href="https://arxiv.org/abs/1911.12512">Asymmetric Co-Teaching for Unsupervised Cross Domain Person Re-Identification</a></td><td><a href="docs/ACT/AAAI-2020-ACT.md">AAAI-2020-ACT.md</a></td><td>doing</td>
+	<td>UDA</td><td>ACT</td><td><a href="https://arxiv.org/abs/1911.12512">Asymmetric Co-Teaching for Unsupervised Cross Domain Person Re-Identification</a></td><td><a href="docs/ACT/AAAI-2020-ACT.md">AAAI-2020-ACT.md</a></td><td>comming soon</td>
 	</tr>
 	<tr>
 	<td>Occluded </td><td>PartNet</td><td><a href="https://arxiv.org/abs/1911.12512">Human Pose Information Discretization for Occluded Person Re-Identification</a></td><td><a href="docs/PartNet/PartNet.md">PartNet.md</a></td><td>finished</td>
 	</tr>
 	<tr>
-	<td>Video </td><td>TSF</td><td><a href="https://arxiv.org/abs/1911.12512">Rethinking Temporal Fusion for Video-based Person Re-identification on Semantic and Time Aspect</a></td><td><a href="docs/TSF/AAAI-2020-TSF.md">AAAI-2020-TSF.md</a></td><td>doing</td>
+	<td>Video </td><td>TSF</td><td><a href="https://arxiv.org/abs/1911.12512">Rethinking Temporal Fusion for Video-based Person Re-identification on Semantic and Time Aspect</a></td><td><a href="docs/TSF/AAAI-2020-TSF.md">AAAI-2020-TSF.md</a></td><td>comming soon</td>
 	</tr>
 	<tr>
-	<td>Text </td><td>NAFS</td><td><a href="https://arxiv.org/abs/1911.12512">NAFS</a></td><td><a href="docs/NAFS/NAFS.md">NAFS.md</a></td><td>doing</td>
+	<td>Text </td><td>NAFS</td><td><a href="https://arxiv.org/abs/1911.12512">NAFS</a></td><td><a href="docs/NAFS/NAFS.md">NAFS.md</a></td><td>comming soon</td>
 	</tr>
 	<tr>
 	<td>3D </td><td>Person-ReID-3D</td><td><a href="https://arxiv.org/abs/1911.12512">Person-ReID-3D</a></td><td><a href="docs/Person-ReID-3D/Person-ReID-3D.md">Person-ReID-3D.md</a></td><td>coming soon</td>
@@ -63,6 +60,8 @@ This file contains a python dictionary storing meta data of the datasets, which 
 "val_im_names": [list of image names] #storing a list of names of validation images
 "test_im_names": [list of image names] #storing a list of names of testing images
 "test_marks"/"val_marks": [list of 0/1] #0/1 indicates if an image is in gallery
+
+you can run tools/transform_format.py to get the formatted dataset or download from [formatted market1501](https://drive.google.com/file/d/1tqRV9ECq3zufuGzXpCvk3SF5jJEa51EB/view?usp=sharing)
 
 ## Geting Started
 
