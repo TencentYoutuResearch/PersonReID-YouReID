@@ -1,4 +1,4 @@
-# you-reid model zoo 
+# YouReID model zoo 
 
 ## Introduction
 
