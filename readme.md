@@ -1,5 +1,5 @@
-# YouReID
 <img src="./docs/youreid-logo.png" width="300" >
+
 YouReID is a light research framework that implements some state-of-the-art person re-identification algorithms for some reid tasks and provides some strong baseline models.
 
 
