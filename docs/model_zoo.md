@@ -13,7 +13,7 @@ We compare some state of the art models in the following pictures, using the per
 ||Market1501<br>mAP/rank-1</br>|DukeMTMC<br>mAP/rank-1</br>|MSMT17<br>mAP/rank-1</br>|config|download|
 |:-:|:-:|:-:|:-:|:-:|
 |baseline|87.65/94.80|77.21/88.33|54.61/78.80|[config](../example/baseline/baseline_dist_bn.yaml)|[weight]() [log]()|
-|MGN|89.28/95.84|80.57/89.14|61.67/83.31|[config](../example/mgn/mgn.yaml)|[weight]() [log]()|
+|MGN|89.28/95.84|80.57/89.14|61.67/83.31|[config](../example/mgn/mgn.yaml)|[weight]() [log]()| 
 |CACENET|90.00/95.67|81.13/89.90|61.9/83.77|[config](../example/cacenet/cacenet.yaml)|[weight]() [log]()|
 
 
