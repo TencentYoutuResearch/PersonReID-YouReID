@@ -38,7 +38,7 @@ class Logger(object):
         self.rank = rank
         if fpath is not None:
             if not os.path.exists(fpath):
-                os.makedirs(fpath)
+                os.makedirs(fpath, exist_ok=True)
             self.file = open(os.path.join(fpath, 'log_%s.txt' % rank), 'a+')
 
     def __del__(self):

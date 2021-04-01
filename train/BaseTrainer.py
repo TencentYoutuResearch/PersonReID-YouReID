@@ -382,7 +382,8 @@ class BaseTrainer(object):
 
     def eval_status(self, epoch):
         ocfg = config.get('optm_config')
-        return ocfg.get('epochs') - 10 <= epoch <= ocfg.get('epochs')
+        # return ocfg.get('epochs') - 10 <= epoch <= ocfg.get('epochs')
+        return epoch == (ocfg.get('epochs') + 1)
 
     def save_feature(self, part, data, features, labels, paths):
         if not os.path.exists(config.get('task_id')):

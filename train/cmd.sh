@@ -1,4 +1,4 @@
-PORT=9998
+PORT=9996
 export PYTHONPATH=/raid/home/fufuyu/torch-reid/
 # nproc_per_node 使用每台机多少块GPU， nnodes使用几台机
 # BaseTrainer.py for supervised reid

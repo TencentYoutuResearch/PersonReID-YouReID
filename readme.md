@@ -1,13 +1,13 @@
-<p align="center"><img src="./docs/YouReid_3.png" width="300" ></p>
+<p align="center"><img src="./docs/YouReID_Logo.png.png" width="300" ></p>
 
 ## Introduction
 
 YouReID is a light research framework that implements some state-of-the-art person re-identification algorithms for some reid tasks and provides some strong baseline models.
 
 ### Major features
-- [x] Simple design style, easy to use and customize
-- [x] Mixed precision and DistributedDataParallel are supported, achieving higher efficiency.
-- [x] some strong baseline methods, including baseline, PCB, MGN
+- [x] Simple design style, easy to use and customize. You can get started in 5 minutes.
+- [x] Mixed precision and DistributedDataParallel training are supported, achieving higher efficiency.  You can run over the baseline model in 25 minutes using two 16GB V100 on the Market-1501 dataset.
+- [x] Some strong baseline methods, including baseline, PCB, MGN.  Specially the performance of baseline model arrives mAP=87.65% and rank-1=94.80 on the Market-1501 dataset.
 - [x] State-of-the-art methods for some reid tasks are supported
 
 ## Model Zoo
