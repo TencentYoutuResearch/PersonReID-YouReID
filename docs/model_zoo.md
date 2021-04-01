@@ -6,6 +6,7 @@ This file documents collection of models trained with you-reid framework. All nu
 
 We compare some state of the art models in the following pictures, using the performance in those paper.
 ![image](zoo/market1501_performance.png) ![image](zoo/duke_performance.png)
+
 "*" stands for using extra information, "^" stands for using larger backbone
 
 ## Models
