@@ -38,7 +38,14 @@ The following table shows the performance of these model
         <th></th><th>Market1501<br>mAP/rank-1</th><th>DukeMTMC<br>mAP/rank-1</th><th>MSMT17<br>mAP/rank-1</th><th>config</th><th>download</th>
     </tr>
     <tr>
-        <td>youtu_reid_baseline_lite</td><td>87.86/95.01</td><td>79.75/89.05</td><td>58.82/80.81</td><td><a href="../example/baseline/baseline_lite_multidataset.yaml">config</a></td><td><a href="https://drive.google.com/file/d/1l-8Lj9OPs4D6qKGAljbJgZuxGvENkDjl/view?usp=sharing">weight</a> <a href="">onnx_weight</a> <a href="">log</a></td>
+        <td>youtu_reid_baseline_lite</td>
+        <td>87.86/95.01</td><td>79.75/89.05</td><td>58.82/80.81</td>
+        <td><a href="../example/baseline/baseline_lite_multidataset.yaml">config</a></td>
+        <td>
+            <a href="https://drive.google.com/file/d/1l-8Lj9OPs4D6qKGAljbJgZuxGvENkDjl/view?usp=sharing">weight</a> 
+            <a href="https://drive.google.com/file/d/1CinUtnkO_r9120qEuL1c8EbMuYzql2Cu/view?usp=sharing">onnx_weight</a> 
+            <a href="https://drive.google.com/file/d/1QmmbU3c2Nw6UR5AGvU5B-v2kRiPKIJQ3/view?usp=sharing">log</a>
+        </td>
     </tr>
     <tr>
         <td>youtu_reid_baseline_medium</td>
@@ -51,14 +58,14 @@ The following table shows the performance of these model
          </td>
     </tr>
     <tr>
-        <td>youtu_reid_baseline_large</td><td>91.85/96.73</td><td>84.40/91.88</td><td>68.68/87.04</td><td><a href="../example/baseline/baseline_large_multidataset.yaml">config</a></td><td><a href="https://drive.google.com/file/d/1zoM1o_6o7otV0VfUxtCwj7O_AbBplWnu/view?usp=sharing">weight</a> <a href="">log</a></td>
+        <td>youtu_reid_baseline_large</td>
+        <td>91.85/96.73</td><td>84.40/91.88</td><td>68.68/87.04</td>
+        <td><a href="../example/baseline/baseline_large_multidataset.yaml">config</a></td>
+        <td>
+            <a href="https://drive.google.com/file/d/1zoM1o_6o7otV0VfUxtCwj7O_AbBplWnu/view?usp=sharing">weight</a> 
+            <a href="https://drive.google.com/file/d/1yU609diFdkre2j7f4rHxZWKO-vkS-04c/view?usp=sharing">onnx_weight</a>
+            <a href="https://drive.google.com/file/d/1iP6sSSxofoeeb-6Q4BDjrD7ncWvT5TEP/view?usp=sharing">log</a>
+         </td>
     </tr>
 </table>
-
-||Market1501<br>mAP/rank-1|DukeMTMC<br>mAP/rank-1|MSMT17<br>mAP/rank-1|config|download|
-|:-:|:-:|:-:|:-:|:-:|
-|youtu_reid_baseline_lite|87.86/95.01|79.75/89.05|58.82/80.81|[config](../example/baseline/baseline_lite_multidataset.yaml)|[weight](https://drive.google.com/file/d/1l-8Lj9OPs4D6qKGAljbJgZuxGvENkDjl/view?usp=sharing) [onnx_weight](https://drive.google.com/file/d/1CinUtnkO_r9120qEuL1c8EbMuYzql2Cu/view?usp=sharing) [log](https://drive.google.com/file/d/1QmmbU3c2Nw6UR5AGvU5B-v2kRiPKIJQ3/view?usp=sharing)|
-|youtu_reid_baseline_medium|90.75/96.32|83.38/91.56|65.30/85.08|[config](../example/baseline/baseline_medium_multidataset.yaml)|[weight](https://drive.google.com/file/d/1bhOMl4masd63alS3HMZ060miyM7R31uR/view?usp=sharing) [onnx_weight](https://drive.google.com/file/d/1IztiK3reDiCXYdR_p73hvENeVZQfQLFb/view?usp=sharing) [log](https://drive.google.com/file/d/1ea0PiLYsTJ3vkjwgO3WMOzRsPdcQBpjk/view?usp=sharing)|
-|youtu_reid_baseline_large|91.85/96.73|84.40/91.88|68.68/87.04|[config](../example/baseline/baseline_large_multidataset.yaml)|[weight](https://drive.google.com/file/d/1zoM1o_6o7otV0VfUxtCwj7O_AbBplWnu/view?usp=sharing) [onnx_weight](https://drive.google.com/file/d/1yU609diFdkre2j7f4rHxZWKO-vkS-04c/view?usp=sharing) [log](https://drive.google.com/file/d/1iP6sSSxofoeeb-6Q4BDjrD7ncWvT5TEP/view?usp=sharing)|
-
 
