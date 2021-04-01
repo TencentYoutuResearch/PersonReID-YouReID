@@ -6,7 +6,7 @@ YouReID is a light research framework that implements some state-of-the-art pers
 
 ### Major features
 - **Concise and easy**: Simple framework, easy to use and customize. You can get started in 5 minutes.
-- **higher efficiency**: Mixed precision and DistributedDataParallel training are supported.  You can run over the baseline model in 25 minutes using two 16GB V100 on the Market-1501 dataset.
+- **Higher efficiency**: Mixed precision and DistributedDataParallel training are supported.  You can run over the baseline model in 25 minutes using two 16GB V100 on the Market-1501 dataset.
 - **Strong**: Some baseline methods are supported, including baseline, PCB, MGN.  Specially the performance of baseline model arrives mAP=87.65% and rank-1=94.80% on the Market-1501 dataset.
 - **Rich model zoo**:  State-of-the-art methods for some reid tasks  like Occluded/UDA/Cross-modal are supported.
 

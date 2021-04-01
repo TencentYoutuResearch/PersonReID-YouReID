@@ -10,6 +10,21 @@ We compare some state of the art models in the following pictures, using the per
 "*" stands for using extra information, "^" stands for using larger backbone
 
 ## Models
+<table>
+    <tr>
+        <th></th><th>Market1501<br>mAP/rank-1</th><th>DukeMTMC<br>mAP/rank-1</th><th>MSMT17<br>mAP/rank-1</th><th>config</th><th>download</th>
+    </tr>
+    <tr>
+        <td>baseline</td><td>87.65/94.80</td><td>77.21/88.33</td><td>54.61/78.80</td><td>[config](../example/baseline/baseline_dist_bn.yaml)</td><td>[weight]() [log]()</td>
+    </tr>
+    <tr>
+        <td>MGN</td><td>89.28/95.84</td><td>80.57/89.14</td><td>61.67/83.31</td><td>[config](../example/mgn/mgn.yaml)</td><td>[weight]() [log]()</td>
+    </tr>
+    <tr>
+        <td>CACENET</td><td>90.00/95.67</td><td>81.13/89.90</td><td>61.9/83.77</td><td>[config](../example/cacenet/cacenet.yaml)</td><td>[weight]() [log]()</td>
+    </tr>
+</table>
+
 
 ||Market1501<br>mAP/rank-1|DukeMTMC<br>mAP/rank-1|MSMT17<br>mAP/rank-1|config|download|
 |:-:|:-:|:-:|:-:|:-:|
