@@ -1,0 +1,39 @@
+dataset_config:
+  workers: 16
+  train_class: FormatData 
+  test_class: FormatData 
+  root: /raid/home/fufuyu/dataset
+  train_name : market1501
+  test_name : market1501 
+  part: train
+  height: 384
+  width: 128
+  batch_size: 64 
+  load_img_to_cash: 0
+  least_image_per_class: 1
+  sample_image_per_class: 8
+  rnd_select_nid: 0  
+  use_tf_sample: 0
+  use_random_pad: 0
+  mgn_style_aug: false
+
+optm_config:
+  name: SGD
+  mode: train
+  weight_decay: 0.0005
+  warmup_factor: 0.
+  momentum: 0.9
+  epochs: 120
+  start_epoch: 0
+  resume: ''
+  multistep: true
+  lr: 0.01  
+  step: [60,70,80,90]
+  gamma: 0.5
+
+model_config:
+  name: Pyramid
+  num_layers: resnet101
+  loss_type: ['softmax', 'triplet']
+  margin: 1.4
+  split_bn: false

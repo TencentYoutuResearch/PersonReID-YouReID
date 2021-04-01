@@ -1,0 +1,53 @@
+dataset_config:
+  workers: 16
+  train_class: OccludedMarket #Market1501 #Occluded_Duke #Market1501 PartialOrOccluded
+  test_class: OccludedReID #FormatData
+  root: /raid/home/fufuyu/dataset
+  train_name : market1501
+  test_name : Partial_iLIDS  # Occluded_REID Partial_iLIDS Partial-REID_Dataset
+  part: train
+  height: 384
+  width: 128
+  batch_size: 128 # 128 是fp32 2卡配置
+  least_image_per_class: 4
+  sample_image_per_class: 4
+  use_tf_sample: false
+  rnd_select_nid: 0  #default 0
+  kwargs:
+    part_num: 6
+    threshold: 0.2
+    brightness: 0.7
+    contrast: 0.5
+    saturation: 0.1
+    hue: 0.
+
+#  mode: val
+
+optm_config:
+  name: SGD
+  mode: train
+  weight_decay: 0.0005
+  warmup_factor: 0.
+  momentum: 0.9
+  epochs: 80
+  start_epoch: 0
+  lr: 0.05  #128 0.05
+  resume: ''
+
+model_config:
+  name: PartNet
+  num_layers: resnet50
+  loss_type: ['softmax', 'triplet', 'vgtri'] #'softmax', 'labelsmooth', 'arcface'
+  margin: 0.3
+  split_bn: true
+  lamb: 0.9
+  p_w: 0.
+  g_w: 1.
+#  use_non_local: true
+
+use_pcb_format: false
+
+
+
+
+

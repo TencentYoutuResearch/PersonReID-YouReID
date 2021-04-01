@@ -1,0 +1,43 @@
+dataset_config:
+  workers: 16
+  train_class: OccludedDuke #Market1501 #Occluded_Duke #Market1501 PartialOrOccluded
+  test_class: OccludedDuke #FormatData
+  root: /raid/home/fufuyu/dataset
+  train_name : Occluded_Duke
+  test_name : Occluded_Duke #msmt17_pcb  #market1501 Duke_pcb msmt17_pcb cuhk03_pcb
+  part: train
+  height: 384
+  width: 128
+  batch_size: 128 # 128 是fp32 2卡配置
+  least_image_per_class: 4
+  sample_image_per_class: 4
+  use_tf_sample: false
+  rnd_select_nid: 0  #default 0
+  kwargs:
+    part_num: 6
+    threshold: 0.2
+
+#  mode: val
+
+optm_config:
+  name: SGD
+  mode: train
+  weight_decay: 0.0005
+  warmup_factor: 0.
+  momentum: 0.9
+  epochs: 80
+  start_epoch: 0
+  lr: 0.05  #128 0.05
+  resume: ''
+
+model_config:
+  name: PartNet
+  num_layers: resnet50
+  loss_type: ['softmax', 'labelsmooth', 'triplet', 'vgtri'] #'softmax', 'labelsmooth', 'arcface'
+  margin: 0.5
+  split_bn: true
+#  use_non_local: true
+
+use_pcb_format: true
+
+
