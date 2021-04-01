@@ -1,4 +1,4 @@
-<p align="center"><img src="./docs/YouReID_Logo.png.png" width="300" ></p>
+<p align="center"><img src="./docs/YouReID_Logo.png" width="300" ></p>
 
 ## Introduction
 
