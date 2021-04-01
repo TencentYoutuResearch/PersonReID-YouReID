@@ -21,7 +21,7 @@ We compare some state of the art models in the following pictures, using the per
         <td>MGN</td><td>89.28/95.84</td><td>80.57/89.14</td><td>61.67/83.31</td><td><a href="../example/mgn/mgn.yaml">config</a></td><td><a href="">weight</a><a href="">log</a></td>
     </tr>
     <tr>
-        <td>CACENET</td><td>90.00/95.67</td><td>81.13/89.90</td><td>61.9/83.77</td><a href="../example/cacenet/cacenet.yaml">config</a></td><td><a href="">weight</a><a href="">log</a></td>
+        <td>CACENET</td><td>90.00/95.67</td><td>81.13/89.90</td><td>61.9/83.77</td><td><a href="../example/cacenet/cacenet.yaml">config</a></td><td><a href="">weight</a><a href="">log</a></td>
     </tr>
 </table>
 
