@@ -36,7 +36,7 @@ this project provides the following algorithms and scripts to run them. Please s
 	<td>Text </td><td>NAFS</td><td><a href="https://arxiv.org/pdf/2101.03036">Contextual Non-Local Alignment over Full-Scale Representation for Text-Based Person Search</a></td><td><a href="docs/NAFS/NAFS.md">NAFS.md</a></td><td>comming soon</td>
 	</tr>
 	<tr>
-	<td>3D </td><td>Person-ReID-3D</td><td><a href="https://arxiv.org/pdf/2101.03036">Contextual Non-Local Alignment over Full-Scale Representation for Text-Based Person Search</a></td><td><a href="docs/Person-ReID-3D/CVPR-2021-PR3D.md">CVPR-2021-PR3D.md</a></td><td>comming soon</td>
+	<td>3D </td><td>Person-ReID-3D</td><td><a href="https://arxiv.org/pdf/2101.03036">Learning 3D Shape Feature for Texture-insensitive Person Re-identification</a></td><td><a href="docs/Person-ReID-3D/CVPR-2021-PR3D.md">CVPR-2021-PR3D.md</a></td><td>comming soon</td>
 	</tr>
 </table>
 
