@@ -87,7 +87,7 @@ git clone this repository
 5. set port and gpu config in cmd.sh
 5. cd train && ./cmd.sh
 
-###### Quickly Started
+#### Quickly Started
 
 ```bash
 cd train && ./cmd.sh
