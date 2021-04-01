@@ -1,7 +1,14 @@
-<img src="./docs/YouReid_3.png" width="300" >
+<p align="center"><img src="./docs/YouReid_3.png" width="300" ></p>
+
+## Introduction
 
 YouReID is a light research framework that implements some state-of-the-art person re-identification algorithms for some reid tasks and provides some strong baseline models.
 
+### Major features
+- [x] Simple design style, easy to use and customize
+- [x] Mixed precision and DistributedDataParallel are supported, achieving higher efficiency.
+- [x] some strong baseline methods, including baseline, PCB, MGN
+- [x] State-of-the-art methods for some reid tasks are supported
 
 ## Model Zoo
 this project provides the following algorithms and scripts to run them. Please see the details in the link provided in the description column
@@ -29,7 +36,7 @@ this project provides the following algorithms and scripts to run them. Please s
 	<td>Text </td><td>NAFS</td><td><a href="https://arxiv.org/pdf/2101.03036">Contextual Non-Local Alignment over Full-Scale Representation for Text-Based Person Search</a></td><td><a href="docs/NAFS/NAFS.md">NAFS.md</a></td><td>comming soon</td>
 	</tr>
 	<tr>
-	<td>3D </td><td>Person-ReID-3D</td><td>Person-ReID-3D</td><td><a href="docs/Person-ReID-3D/CVPR-2021-PR3D.md">CVPR-2021-PR3D.md</a></td><td>comming soon</td>
+	<td>3D </td><td>Person-ReID-3D</td><td><a href="https://arxiv.org/pdf/2101.03036">Contextual Non-Local Alignment over Full-Scale Representation for Text-Based Person Search</a></td><td><a href="docs/Person-ReID-3D/CVPR-2021-PR3D.md">CVPR-2021-PR3D.md</a></td><td>comming soon</td>
 	</tr>
 </table>
 
