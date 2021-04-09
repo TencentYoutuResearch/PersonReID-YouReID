@@ -12,7 +12,7 @@ Most existing Re-IDentification (Re-ID) methods are highly dependent on precise 
 |paper|88.2/95.7|79.0/89.0|[weight](https://drive.google.com/drive/folders/1vK30A-8FlQbQGVT-Wv9W9qMz-A74fv_3?usp=sharing)|
 |this implement|88.6/95.2|80.4/89.6|[weight](https://drive.google.com/drive/folders/1vK30A-8FlQbQGVT-Wv9W9qMz-A74fv_3?usp=sharing)|
 
-## config
+## Config
 ```yaml
 yaml: 'experiment/Pyramid/Pyramid.yaml'
 ```
