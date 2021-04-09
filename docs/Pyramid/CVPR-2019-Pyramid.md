@@ -3,22 +3,20 @@
 Most existing Re-IDentification (Re-ID) methods are highly dependent on precise bounding boxes that enable images to be aligned with each other. However, due to the challenging practical scenarios, current detection model soften produce inaccurate bounding boxes, which inevitably degenerate the performance of existing Re-ID algorithms. We propose a novel coarse-to-fine pyramid model to relax the need of bounding boxes, which not only incorporates local and global information, but also integrates the gradual cues between them. The pyramid modelis able to match at different scales and then search for the correct image of the same identity, even when the image pairs are not aligned. In addition, in order to learn discriminative identity representation, we explore a dynamic training scheme to seamlessly unify two losses and extractappropriate shared information between them. 
 
 ![Framework](figures/framework.JPG)
----
-||Market1501<br>mAP&rank-1</br>|DukeMTMC<br>mAP&rank-1</br>|
-|:-:|:-:|:-:|
-|paper|88.2/95.7|79.0/89.0|
-|this implement|88.6/95.2|79.8/89.6|
 
-### Performance
-<img src="figures/performance0.JPG" height="500" />
-<img src="figures/performance1.JPG" height="300" />
-<img src="figures/performance2.JPG" height="300" />
 
-### config
+## Performance
+
+||Market1501<br>mAP&rank-1</br>|DukeMTMC<br>mAP&rank-1</br>|weight|
+|:-:|:-:|:-:|:-:|
+|paper|88.2/95.7|79.0/89.0|[weight](https://drive.google.com/drive/folders/1vK30A-8FlQbQGVT-Wv9W9qMz-A74fv_3?usp=sharing)|
+|this implement|88.6/95.2|80.4/89.6|[weight](https://drive.google.com/drive/folders/1vK30A-8FlQbQGVT-Wv9W9qMz-A74fv_3?usp=sharing)|
+
+## Config
 ```yaml
 yaml: 'experiment/Pyramid/Pyramid.yaml'
 ```
-### Citation
+## Citation
 If you are interested in this work, please cite our paper
 ```
 @inproceedings{zheng2019pyramidal,
