@@ -1,6 +1,6 @@
 gpus: [0,1]
-yaml: ../example/baseline/baseline_dist_bn.yaml #mgn  baseline_dist_bn   #mgn_dist_bn_multidataset PartNet
-task_id: ../../snapshot/release/baseline_market
+yaml: ../example/pcb/pcb.yaml #mgn  baseline_dist_bn   #mgn_dist_bn_multidataset PartNet
+task_id: ../../snapshot/release/pcb_msmt
 eval: false
 convert_to_onnx: false
 debug: false

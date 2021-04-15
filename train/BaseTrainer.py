@@ -20,7 +20,7 @@ from utils import *
 from core.config import config
 from core.loss import normalize
 from core.layers import convert_dsbnConstBatch
-from torch.nn.modules.upsampling import Upsample
+
 
 os.environ['CUDA_VISIBLE_DEVICES'] = ','.join([str(x) for x in config.get('gpus')])
 
@@ -38,7 +38,9 @@ class BaseTrainer(object):
 
     def init_seed(self):
         random.seed(config.get('seed'))
+        np.random.seed(config.get('seed'))
         torch.manual_seed(config.get('seed'))
+        torch.cuda.manual_seed_all(config.get('seed'))
         cudnn.deterministic = True
         warnings.warn('You have chosen to seed training. '
                       'This will turn on the CUDNN deterministic setting, '
@@ -68,6 +70,7 @@ class BaseTrainer(object):
                                                                    cfg['use_tf_sample'],
                                                                    rnd_select_nid=cfg['rnd_select_nid'],
                                                                    )
+
         source_train_loader = torch.utils.data.DataLoader(
             source_data,
             batch_size=cfg['batch_size'], shuffle=False, sampler=source_train_sampler,
@@ -383,7 +386,7 @@ class BaseTrainer(object):
     def eval_status(self, epoch):
         ocfg = config.get('optm_config')
         # return ocfg.get('epochs') - 10 <= epoch <= ocfg.get('epochs')
-        return epoch == (ocfg.get('epochs') + 1)
+        return epoch == (ocfg.get('epochs') - 1)
 
     def save_feature(self, part, data, features, labels, paths):
         if not os.path.exists(config.get('task_id')):

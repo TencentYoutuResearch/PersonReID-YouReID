@@ -12,16 +12,23 @@ We compare some state of the art models in the following pictures, using the per
 ## Models
 <table>
     <tr>
-        <th></th><th>Market1501<br>mAP/rank-1</th><th>DukeMTMC<br>mAP/rank-1</th><th>MSMT17<br>mAP/rank-1</th><th>config</th><th>download</th>
+        <th></th><th>Market1501<br>mAP/rank-1</th><th>DukeMTMC<br>mAP/rank-1</th><th>MSMT17<br>mAP/rank-1</th><th>config</th><th>log</th>
     </tr>
     <tr>
-        <td>baseline</td><td>87.65/94.80</td><td>77.21/88.33</td><td>54.61/78.80</td><td><a href="../example/baseline/baseline_dist_bn.yaml">config</a></td><td><a href="">weight</a> <a href="">log</a></td>
+        <td>baseline</td><td>87.65/94.80</td><td>77.21/88.33</td><td>54.61/78.80</td>
+        <td><a href="../example/baseline/baseline_dist_bn.yaml">config</a></td><td><a href="">log</a></td>
     </tr>
     <tr>
-        <td>MGN</td><td>89.28/95.84</td><td>80.57/89.14</td><td>61.67/83.31</td><td><a href="../example/mgn/mgn.yaml">config</a></td><td><a href="">weight</a> <a href="">log</a></td>
+        <td>PCB</td><td>84.94/94.33</td><td>77.59/87.84</td><td>55.45/78.51</td>
+        <td><a href="../example/pcb/pcb.yaml">config</a></td><td><a href="">log</a></td>
     </tr>
     <tr>
-        <td>CACENET</td><td>90.00/95.67</td><td>81.13/89.90</td><td>61.9/83.77</td><td><a href="../example/cacenet/cacenet.yaml">config</a></td><td><a href="">weight</a> <a href="">log</a></td>
+        <td>MGN</td><td>89.28/95.84</td><td>80.57/89.14</td><td>61.67/83.31</td>
+        <td><a href="../example/mgn/mgn.yaml">config</a></td><td><a href="">log</a></td>
+    </tr>
+    <tr>
+        <td>CACENET</td><td>90.00/95.67</td><td>81.13/89.90</td><td>61.9/83.77</td>
+        <td><a href="../example/cacenet/cacenet.yaml">config</a></td><td><a href="">log</a></td>
     </tr>
 </table>
 

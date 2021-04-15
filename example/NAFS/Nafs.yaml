@@ -1,0 +1,32 @@
+dataset_config:
+  workers: 4
+  batch_size: 64
+  dataset_dir: /data1/home/aragorngao/CUHK-PEDES/CUHK-PEDES
+  
+optm_config:
+  num_epoches: 60
+  CMPM: true
+  CMPC: true
+  CONT: true
+  lr: 0.0011
+  weight_decay: 0.00004
+  adam_alpha: 0.9
+  adam_beta: 0.999
+  epsilon: 0.00000001
+  warmup_method: linear
+  epoch_decay: "20_25_35"
+    
+model_config:
+  image_model_path: /data1/home/aragorngao/NAFS_github/pretrained/resnet50-19c8e357.pth
+  language_model_path: /data1/home/aragorngao/NAFS_github/pretrained/bert-base-uncased
+  checkpoint_dir: /data1/home/aragorngao/NAFS_data/model_data
+  feature_size: 768
+  focal_type: none
+  num_classes: 11003
+  pre_trained: true
+  part2: 3
+  part3: 2
+  lambda_softmax: 20.0
+  lambda_cont: 0.1
+  reranking: true
+  

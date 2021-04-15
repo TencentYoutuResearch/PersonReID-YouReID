@@ -1,6 +1,10 @@
 *.pyc
 *.pyd
-.idea
+.idea/
+.DS_Store
 legacy/
 VAAL/
 vaal*
+__pycache__/
+
+

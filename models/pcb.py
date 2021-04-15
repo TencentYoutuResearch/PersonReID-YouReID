@@ -2,7 +2,7 @@ import copy
 import torch
 from torch import nn
 from .backbones import model_zoo
-
+from core.loss import *
 
 class PCB(nn.Module):
 
@@ -13,7 +13,10 @@ class PCB(nn.Module):
                  last_stride=1,
                  reduce_dim=256,
                  stripe=6,
-                 use_non_local=False):
+                 use_non_local=False,
+                 loss_type=None,
+                 margin=0.5
+                 ):
 
         super(PCB, self).__init__()
         kwargs = {
@@ -40,6 +43,20 @@ class PCB(nn.Module):
         self.embedding_layers = nn.ModuleList([copy.deepcopy(embedding_layer) for _ in range(stripe)])
         self.fc_layers = nn.ModuleList([copy.deepcopy(fc_layer) for _ in range(stripe)])
 
+        self.loss_type = loss_type
+
+        if 'softmax' in self.loss_type:
+            self.fc_layer = nn.Sequential(nn.Dropout(), nn.Linear(reduce_dim, num_classes))
+            self._init_fc(self.fc_layer)
+            if 'labelsmooth' in self.loss_type:
+                self.ce_loss = CrossEntropyLabelSmooth(num_classes)
+            else:
+                self.ce_loss = nn.CrossEntropyLoss()  # .cuda()
+        if 'triplet' in self.loss_type:
+            self.tri_loss = TripletLoss(margin, normalize_feature=not 'circle' in self.loss_type)
+        if 'soft_triplet' in self.loss_type:
+            self.tri_loss = SoftTripletLoss(margin, normalize_feature=not 'circle' in self.loss_type)
+
     @staticmethod
     def _init_bn(bn):
         nn.init.constant_(bn.weight, 1.)
@@ -51,7 +68,7 @@ class PCB(nn.Module):
         nn.init.normal_(fc[1].weight, std=0.001)
         nn.init.constant_(fc[1].bias, 0.)
 
-    def forward(self, x):
+    def forward(self, x, label=None):
         x = self.resnet(x)
         # print(x.shape)
         softmax_logits, triplet_logits = [], []
@@ -68,12 +85,13 @@ class PCB(nn.Module):
         return softmax_logits, [triplet_logit]
 
     def compute_loss(self, output, target):
-        ce_logit, tri_logit = output
+        ce_logits, tri_logit = output
         losses, losses_names = [], []
         if 'softmax' in self.loss_type or 'arcface' in self.loss_type:
-            cls_loss = self.ce_loss(ce_logit[0], target)
-            losses.append(cls_loss)
-            losses_names.append('cls_loss')
+            for ce_id, ce_logit in enumerate(ce_logits):
+                cls_loss = self.ce_loss(ce_logit, target)
+                losses.append(cls_loss)
+                losses_names.append('cls_loss_%d' % ce_id)
         if len(set(['triplet',  'soft_triplet']) & set(self.loss_type)) == 1:
             tri_loss = self.tri_loss(tri_logit[0], target)
             losses.append(tri_loss)
