@@ -24,8 +24,12 @@ all scales, called NAFS (i.e. Non-local Alignment over Full-Scale representation
 
 ### Training & Testing
 
-set the config in `config.yaml`
-
+Set the config in `config.yaml`,  like
+```
+gpus: [1,2,3,4]
+yaml: ../example/Nafs/Nafs.yaml
+```
+and 
 ```
 export PYTHONPATH=root_path
 cd root_path/train; python3 Nafs_Trainer.py
@@ -36,9 +40,11 @@ cd root_path/train; python3 Nafs_Trainer.py
 <p align="center"><img src="figures/figure4.JPG"></p>
 
 ## Citation
+```
 @article{gao2021contextual,
   title={Contextual Non-Local Alignment over Full-Scale Representation for Text-Based Person Search},
   author={Gao, Chenyang and Cai, Guanyu and Jiang, Xinyang and Zheng, Feng and Zhang, Jun and Gong, Yifei and Peng, Pai and Guo, Xiaowei and Sun, Xing},
   journal={arXiv preprint arXiv:2101.03036},
   year={2021}
 }
+```
