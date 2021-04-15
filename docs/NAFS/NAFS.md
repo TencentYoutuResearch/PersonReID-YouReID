@@ -32,8 +32,8 @@ cd root_path/train; python3 Nafs_Trainer.py
 ```
 
 ## Model Performance
-<p align="center"><img src="figures/table1.JPG" width="300" ></p>
-<p align="center"><img src="figures/figure4.JPG" width="300" ></p>
+<p align="center"><img src="figures/table1.JPG" ></p>
+<p align="center"><img src="figures/figure4.JPG"></p>
 
 ## Citation
 @article{gao2021contextual,
