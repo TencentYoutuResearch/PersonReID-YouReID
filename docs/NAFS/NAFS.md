@@ -32,6 +32,13 @@ cd root_path/train; python3 Nafs_Trainer.py
 ```
 
 ## Model Performance
+<p align="center"><img src="figures/table1.JPG" width="300" ></p>
+<p align="center"><img src="figures/figure4.JPG" width="300" ></p>
 
-![Performance0](figures/table1.JPG)
-![Performance0](figures/figure4.JPG)
+## Citation
+@article{gao2021contextual,
+  title={Contextual Non-Local Alignment over Full-Scale Representation for Text-Based Person Search},
+  author={Gao, Chenyang and Cai, Guanyu and Jiang, Xinyang and Zheng, Feng and Zhang, Jun and Gong, Yifei and Peng, Pai and Guo, Xiaowei and Sun, Xing},
+  journal={arXiv preprint arXiv:2101.03036},
+  year={2021}
+}
