@@ -5,7 +5,7 @@ all scales, called NAFS (i.e. Non-local Alignment over Full-Scale representation
 
 ## Model Framework
 
-![Framework](docs/Nafs/figures/framework.JPG)
+![Framework](NAFS/figures/framework.JPG)
 
 ## Requirement
 * Python 3.7
@@ -33,5 +33,5 @@ cd root_path/train; python3 Nafs_Trainer.py
 
 ## Model Performance
 
-![Performance0](docs/Nafs/figures/table1.JPG)
-![Performance0](docs/Nafs/figures/figure4.JPG)
+![Performance0](NAFS/figures/table1.JPG)
+![Performance0](NAFS/figures/figure4.JPG)
