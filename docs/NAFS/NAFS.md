@@ -14,22 +14,23 @@ all scales, called NAFS (i.e. Non-local Alignment over Full-Scale representation
 * matplotlib (not necessary unless the need for the result figure)  
 * scipy 1.2.1 
 * pytorch_transformers
+
 ## Usage
 
 ### Data Preparation
 
 1. Please download [CUHK-PEDES dataset](https://github.com/ShuangLI59/Person-Search-with-Natural-Language-Description) .
 3. Download [pretrained Resnet50 model](https://download.pytorch.org/models/resnet50-19c8e357.pth),  [bert-base-uncased model](https://s3.amazonaws.com/models.huggingface.co/bert/bert-base-uncased.tar.gz) and [vocabulary](https://s3.amazonaws.com/models.huggingface.co/bert/bert-base-uncased-vocab.txt)
-3. Set the config in `/example/Nafs/Nafs.yaml`
+3. Set the config in `/example/NAFS/Nafs.yaml`
 
 ### Training & Testing
 
 Set the config in `config.yaml`,  like
 ```
-gpus: [1,2,3,4]
-yaml: ../example/Nafs/Nafs.yaml
+gpus: [0,1,2,3]
+yaml: ../example/NAFS/Nafs.yaml
 ```
-and 
+change the image_model_path and language_model_path config in `example/NAFS/Nafs.yaml`
 ```
 export PYTHONPATH=root_path
 cd root_path/train; python3 Nafs_Trainer.py

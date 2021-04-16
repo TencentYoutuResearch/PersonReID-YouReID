@@ -87,7 +87,7 @@ class NafsTrainer(BaseTrainer):
     def evalution(self, model, test_loader, unique_image):
         mconfig = config.get('model_config')
         if config.get('eval'):
-            ckpt_path = os.path.join(mconfig['checkpoint_dir'], 'best_model.pth.tar')
+            ckpt_path = os.path.join(config.get('task_id'), 'best_model.pth.tar')
             start_epoch = self.load_ckpt(model, ckpt_path=ckpt_path)
         
         model.eval()
@@ -233,7 +233,7 @@ class NafsTrainer(BaseTrainer):
                 if ac_top1_t2i > ac_t2i_top1_best:
                     best_epoch = epoch
                     ac_t2i_top1_best = ac_top1_t2i
-                    self.save_checkpoint(state, config.get('model_config')['checkpoint_dir'])
+                    self.save_checkpoint(state, config.get('task_id'))
             
                 self.logger.write('epoch:{}'.format(epoch))
                 self.logger.write('top1_t2i: {:.3f}, top5_t2i: {:.3f}, top10_t2i: {:.3f}, top1_i2t: {:.3f}, top5_i2t: {:.3f}, top10_i2t: {:.3f}'.format(
@@ -241,7 +241,7 @@ class NafsTrainer(BaseTrainer):
             
         self.logger.write('Best epoch:{}'.format(best_epoch))
         self.logger.write('Train done')
-        self.logger.write(config.get('model_config')['checkpoint_dir'])
+        # self.logger.write(config.get('model_config')['checkpoint_dir'])
         self.logger.write(config.get('task_id'))
 
         end = time.time()

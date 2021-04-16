@@ -17,9 +17,8 @@ optm_config:
   epoch_decay: "20_25_35"
     
 model_config:
-  image_model_path: /data1/home/aragorngao/NAFS_github/pretrained/resnet50-19c8e357.pth
-  language_model_path: /data1/home/aragorngao/NAFS_github/pretrained/bert-base-uncased
-  checkpoint_dir: /data1/home/aragorngao/NAFS_data/model_data
+  image_model_path: /YOURPATH/pretrained/resnet50-19c8e357.pth
+  language_model_path: /YOURPATH/pretrained/bert-base-uncased
   feature_size: 768
   focal_type: none
   num_classes: 11003
