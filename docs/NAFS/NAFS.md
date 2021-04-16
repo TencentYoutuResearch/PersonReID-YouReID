@@ -30,8 +30,7 @@ Set the config in `config.yaml`,  like
 gpus: [0,1,2,3]
 yaml: ../example/NAFS/Nafs.yaml
 ```
-Change the image_model_path and language_model_path config in `example/NAFS/Nafs.yaml`，
-Last
+Change the image_model_path and language_model_path config in `example/NAFS/Nafs.yaml`，and last
 ```
 export PYTHONPATH=root_path
 cd root_path/train; python3 Nafs_Trainer.py
