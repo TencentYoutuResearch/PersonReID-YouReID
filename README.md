@@ -24,19 +24,19 @@ this project provides the following algorithms and scripts to run them. Please s
         <td>Pyramid</td><td><a href="https://openaccess.thecvf.com/content_CVPR_2019/papers/Zheng_Pyramidal_Person_Re-IDentification_via_Multi-Loss_Dynamic_Training_CVPR_2019_paper.pdf">Pyramidal Person Re-IDentification via Multi-Loss Dynamic Training</a></td><td><a href="docs/Pyramid/CVPR-2019-Pyramid.md">CVPR-2019-Pyramid.md</a></td><td>finished</td>
     </tr>
 	<tr>
-	<td>UDA</td><td>ACT</td><td><a href="https://arxiv.org/abs/1911.12512">Asymmetric Co-Teaching for Unsupervised Cross Domain Person Re-Identification</a></td><td><a href="docs/ACT/AAAI-2020-ACT.md">AAAI-2020-ACT.md</a></td><td>comming soon</td>
+	    <td>Text </td><td>NAFS</td><td><a href="https://arxiv.org/pdf/2101.03036">Contextual Non-Local Alignment over Full-Scale Representation for Text-Based Person Search</a></td><td><a href="docs/NAFS/NAFS.md">NAFS.md</a></td><td>finished</td>
 	</tr>
 	<tr>
-	<td>Occluded </td><td>PartNet</td><td><a href="https://arxiv.org/abs/1911.12512">Human Pose Information Discretization for Occluded Person Re-Identification</a></td><td><a href="docs/PartNet/PartNet.md">PartNet.md</a></td><td>finished</td>
+	    <td>UDA</td><td>ACT</td><td><a href="https://arxiv.org/abs/1911.12512">Asymmetric Co-Teaching for Unsupervised Cross Domain Person Re-Identification</a></td><td><a href="docs/ACT/AAAI-2020-ACT.md">AAAI-2020-ACT.md</a></td><td>comming soon</td>
 	</tr>
 	<tr>
-	<td>Video </td><td>TSF</td><td><a href="https://arxiv.org/abs/1911.12512">Rethinking Temporal Fusion for Video-based Person Re-identification on Semantic and Time Aspect</a></td><td><a href="docs/TSF/AAAI-2020-TSF.md">AAAI-2020-TSF.md</a></td><td>comming soon</td>
+	    <td>Video </td><td>TSF</td><td><a href="https://arxiv.org/abs/1911.12512">Rethinking Temporal Fusion for Video-based Person Re-identification on Semantic and Time Aspect</a></td><td><a href="docs/TSF/AAAI-2020-TSF.md">AAAI-2020-TSF.md</a></td><td>comming soon</td>
 	</tr>
 	<tr>
-	<td>Text </td><td>NAFS</td><td><a href="https://arxiv.org/pdf/2101.03036">Contextual Non-Local Alignment over Full-Scale Representation for Text-Based Person Search</a></td><td><a href="docs/NAFS/NAFS.md">NAFS.md</a></td><td>finished</td>
+	    <td>3D </td><td>Person-ReID-3D</td><td><a href="">Learning 3D Shape Feature for Texture-insensitive Person Re-identification</a></td><td><a href="docs/Person-ReID-3D/CVPR-2021-PR3D.md">CVPR-2021-PR3D.md</a></td><td>waited</td>
 	</tr>
 	<tr>
-	<td>3D </td><td>Person-ReID-3D</td><td><a href="https://arxiv.org/pdf/2101.03036">Learning 3D Shape Feature for Texture-insensitive Person Re-identification</a></td><td><a href="docs/Person-ReID-3D/CVPR-2021-PR3D.md">CVPR-2021-PR3D.md</a></td><td>comming soon</td>
+	    <td>Occluded </td><td>PartNet</td><td><a href="">Human Pose Information Discretization for Occluded Person Re-Identification</a></td><td><a href="">PartNet.md</a></td><td>waited</td>
 	</tr>
 </table>
 
